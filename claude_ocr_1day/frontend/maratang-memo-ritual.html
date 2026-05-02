@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마라탕 메모 의식</title>
+  <style>
+    :root {
+      --bg: #140807;
+      --bg-2: #220d0a;
+      --panel: rgba(30, 14, 12, 0.8);
+      --panel-2: rgba(42, 18, 15, 0.95);
+      --line: rgba(255, 255, 255, 0.09);
+      --text: #fff4ed;
+      --muted: #d2b4ab;
+      --hot: #ff6b4a;
+      --hot-2: #ff9f57;
+      --gold: #f7c66a;
+      --mint: #a8f0d1;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(255, 111, 74, 0.24), transparent 20%),
+        radial-gradient(circle at 80% 18%, rgba(247, 198, 106, 0.12), transparent 20%),
+        radial-gradient(circle at 60% 90%, rgba(168, 240, 209, 0.09), transparent 22%),
+        linear-gradient(180deg, #100605 0%, #1a0907 100%);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.95), rgba(0,0,0,.36));
+    }
+
+    .app {
+      width: min(1440px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 24px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+      padding: 18px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(42, 18, 15, 0.9), rgba(24, 10, 9, 0.96));
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 18px;
+      height: calc(100vh - 36px);
+      overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+      width: 86px;
+      min-width: 86px;
+      padding: 14px 10px;
+      grid-template-rows: auto 1fr;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #230b08;
+      font-size: 1.15rem;
+      background: linear-gradient(135deg, #ff9f57, #ff6b4a);
+      box-shadow: 0 16px 30px rgba(255, 111, 74, 0.2);
+      flex: none;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 1rem;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-copy span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .sidebar.collapsed .brand-copy,
+    .sidebar.collapsed .history-head,
+    .sidebar.collapsed .history-list {
+      display: none;
+    }
+
+    .collapsed-label {
+      display: none;
+    }
+
+    .sidebar.collapsed .collapsed-label {
+      display: grid;
+      place-items: center;
+      padding-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.22em;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      margin: 0 auto;
+      min-height: 300px;
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .history-head h2 {
+      margin: 0;
+      font-size: 0.98rem;
+      letter-spacing: -0.03em;
+    }
+
+    .compact-button,
+    .top-button,
+    .small-button,
+    .ghost-button,
+    .primary-button {
+      border: 1px solid transparent;
+      border-radius: 999px;
+      transition: 160ms ease;
+    }
+
+    .compact-button,
+    .top-button,
+    .small-button {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255,255,255,0.08);
+      padding: 10px 14px;
+    }
+
+    .compact-button:hover,
+    .top-button:hover,
+    .small-button:hover,
+    .ghost-button:hover,
+    .primary-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .history-item {
+      display: grid;
+      gap: 6px;
+      padding: 14px;
+      text-align: left;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .history-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 159, 87, 0.22);
+      background: rgba(255, 159, 87, 0.08);
+    }
+
+    .history-item.active {
+      border-color: rgba(255, 159, 87, 0.4);
+      background: linear-gradient(180deg, rgba(255,159,87,0.16), rgba(255,107,74,0.08));
+    }
+
+    .history-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .history-title {
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .history-meta,
+    .history-sub {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #fbe9e5;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(40, 16, 14, 0.72);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mode-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 159, 87, 0.12);
+      border: 1px solid rgba(255, 159, 87, 0.2);
+      color: #ffd6b8;
+      font-size: 0.84rem;
+      flex: none;
+    }
+
+    .memo-label {
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scene-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 344px;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .scene-shell.start-mode {
+      grid-template-columns: minmax(0, 1fr) 280px;
+    }
+
+    .scene {
+      min-width: 0;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(255, 159, 87, 0.08), transparent 18%),
+        radial-gradient(circle at 85% 8%, rgba(247, 198, 106, 0.08), transparent 18%),
+        linear-gradient(180deg, rgba(38, 15, 12, 0.88), rgba(23, 10, 8, 0.96));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      min-height: 660px;
+      display: grid;
+      align-items: stretch;
+    }
+
+    .scene.start-mode {
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      padding: 34px;
+    }
+
+    .scene-body {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+    }
+
+    .intro-card {
+      min-height: 520px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255, 159, 87, 0.18), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      justify-items: center;
+      align-items: center;
+      gap: 24px;
+      padding: 34px 24px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .intro-copy {
+      text-align: center;
+      max-width: 700px;
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,159,87,0.18);
+      background: rgba(255,159,87,0.08);
+      color: #ffd6b8;
+      font-size: 0.92rem;
+    }
+
+    .intro-copy h1 {
+      margin: 0;
+      font-size: clamp(2.6rem, 4.9vw, 5rem);
+      line-height: 0.96;
+      letter-spacing: -0.08em;
+    }
+
+    .intro-copy p {
+      margin: 0;
+      max-width: 52ch;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 1.02rem;
+    }
+
+    .start-form {
+      width: min(620px, calc(100% - 32px));
+      display: grid;
+      gap: 12px;
+      justify-self: center;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .memo-input {
+      width: 100%;
+      min-height: 58px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding: 0 18px;
+      outline: none;
+    }
+
+    .memo-input::placeholder { color: #bda198; }
+    .memo-input:focus { border-color: rgba(255,159,87,0.5); box-shadow: 0 0 0 4px rgba(255,159,87,0.08); }
+
+    .primary-button {
+      min-height: 58px;
+      padding: 0 20px;
+      font-weight: 800;
+      color: #250d09;
+      background: linear-gradient(135deg, #ff9f57, #ff6b4a);
+      box-shadow: 0 18px 40px rgba(255, 111, 74, 0.18);
+    }
+
+    .ghost-button {
+      min-height: 58px;
+      padding: 0 16px;
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+      border-color: var(--line);
+    }
+
+    .helper-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .receipt {
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(42, 18, 15, 0.92), rgba(26, 11, 10, 0.98));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 660px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .receipt.collapsed {
+      min-height: 660px;
+    }
+
+    .receipt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .receipt-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: -0.04em;
+    }
+
+    .receipt-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      overflow: auto;
+    }
+
+    .receipt-block {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      display: grid;
+      gap: 10px;
+    }
+
+    .receipt-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-weight: 800;
+    }
+
+    .receipt-note,
+    .timeline-sub,
+    .empty-note,
+    .spice-note,
+    .status-note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .ingredient-list,
+    .receipt-lines,
+    .timeline-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .line-item,
+    .timeline-item,
+    .ingredient-chip,
+    .mouth-chip {
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .line-item {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #fbe9e5;
+    }
+
+    .line-item small,
+    .timeline-item small {
+      color: var(--muted);
+    }
+
+    .price-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      font-weight: 800;
+      font-size: 1.04rem;
+    }
+
+    .scene-grid {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .scene-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 14px;
+    }
+
+    .scene-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: -0.04em;
+    }
+
+    .scene-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .scene-stage {
+      min-height: 420px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,159,87,0.12), transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(247,198,106,0.08), transparent 18%),
+        linear-gradient(180deg, rgba(33, 14, 12, 0.98), rgba(21, 8, 7, 0.98));
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+    }
+
+    .scene-stage.start-stage {
+      min-height: 520px;
+      align-items: center;
+      justify-items: center;
+      padding: 28px;
+    }
+
+    .pot-wrap {
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      align-self: center;
+    }
+
+    .pot {
+      width: min(100%, 560px);
+      min-height: 240px;
+      border-radius: 34px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,159,87,0.12), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .pot::before {
+      content: "";
+      position: absolute;
+      inset: auto 12px 10px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(255,255,255,0.03));
+      opacity: 0.65;
+    }
+
+    .broth {
+      position: absolute;
+      inset: 26px 20px 26px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,184,135,0.45), transparent 30%),
+        radial-gradient(circle at 70% 20%, rgba(255,107,74,0.32), transparent 28%),
+        linear-gradient(180deg, rgba(255,117,72,0.42), rgba(121, 27, 18, 0.82));
+      box-shadow: inset 0 8px 40px rgba(255, 205, 171, 0.06);
+      overflow: hidden;
+    }
+
+    .broth::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 25%, rgba(255,255,255,0.08) 0 5px, transparent 7px), radial-gradient(circle at 78% 60%, rgba(255,255,255,0.06) 0 4px, transparent 6px), radial-gradient(circle at 55% 34%, rgba(255,255,255,0.06) 0 4px, transparent 6px), radial-gradient(circle at 30% 65%, rgba(255,255,255,0.05) 0 5px, transparent 7px);
+      opacity: 0.55;
+    }
+
+    .ingredients-in-pot {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+      min-height: 170px;
+      align-content: flex-start;
+    }
+
+    .ingredient-chip,
+    .mouth-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      color: #fff6f0;
+      user-select: none;
+    }
+
+    .ingredient-chip {
+      cursor: grab;
+      transform: translateZ(0);
+    }
+
+    .ingredient-chip:active { cursor: grabbing; }
+
+    .ingredient-chip .price,
+    .line-item .price {
+      color: #ffd9bf;
+      font-weight: 800;
+    }
+
+    .broth-empty {
+      position: relative;
+      z-index: 1;
+      min-height: 154px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      color: #ffd9bf;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .broth-empty span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .spice-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .spice-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .spice-meter {
+      position: relative;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .spice-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 18%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ff9f57, #ff6b4a 70%, #ff324d);
+      box-shadow: 0 0 16px rgba(255,107,74,0.4);
+      transition: width 180ms ease, filter 180ms ease;
+    }
+
+    .spice-warning {
+      color: #ffd0c7;
+    }
+
+    .stage-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .ingredient-tray {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .ingredient-tray-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ingredient-tray-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .small-button {
+      padding: 10px 14px;
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+      border-color: var(--line);
+    }
+
+    .spice-side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .vertical-meter {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .meter-track {
+      width: 88px;
+      height: 260px;
+      padding: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .meter-fill {
+      width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ff324d, #ff6b4a 55%, #ff9f57 100%);
+      transition: height 180ms ease;
+      box-shadow: 0 0 18px rgba(255, 107, 74, 0.35);
+    }
+
+    .meter-value {
+      font-size: 1.9rem;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+    }
+
+    .meter-note {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .mouth-zone {
+      border-radius: 22px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      padding: 14px;
+      text-align: center;
+      color: #ffd6b8;
+      background: rgba(255,255,255,0.02);
+      transition: 160ms ease;
+    }
+
+    .mouth-zone.dragover {
+      border-color: rgba(255, 159, 87, 0.5);
+      background: rgba(255, 159, 87, 0.12);
+      box-shadow: 0 0 0 4px rgba(255,159,87,0.08);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(8, 3, 2, 0.5);
+      backdrop-filter: blur(10px);
+      z-index: 50;
+      padding: 24px;
+    }
+
+    .overlay.show { display: grid; }
+
+    .overlay-card {
+      width: min(620px, calc(100vw - 32px));
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: linear-gradient(180deg, rgba(42,18,15,0.98), rgba(18,7,6,0.98));
+      box-shadow: var(--shadow);
+      padding: 26px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .overlay-title {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 3vw, 2.6rem);
+      letter-spacing: -0.06em;
+    }
+
+    .overlay-sub {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .confetti {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti span {
+      position: absolute;
+      width: 10px;
+      height: 18px;
+      border-radius: 4px;
+      animation: confetti 1.2s ease-out forwards;
+      opacity: 0.9;
+    }
+
+    @keyframes confetti {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+      18% { opacity: 1; }
+      100% { transform: translateY(260px) rotate(360deg); opacity: 0; }
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
+      padding: 14px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(28, 10, 8, 0.92);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      transition: 220ms ease;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 350px;
+      gap: 14px;
+      min-height: 100%;
+    }
+
+    .detail-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .timeline-card {
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .timeline-item {
+      padding: 12px 14px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .timeline-item.active {
+      border-color: rgba(255, 159, 87, 0.32);
+      background: rgba(255, 159, 87, 0.1);
+    }
+
+    .detail-stage {
+      min-height: 520px;
+    }
+
+    .timeline-progress {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .start-mode .scene-grid { grid-template-columns: 1fr; }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; }
+      .scene-shell,
+      .detail-layout { grid-template-columns: 1fr; }
+      .receipt { min-height: auto; }
+      .scene { min-height: 620px; }
+    }
+
+    @media (max-width: 760px) {
+      .app { width: min(100% - 16px, 100%); padding-top: 10px; }
+      .scene-shell.start-mode,
+      .scene-shell,
+      .detail-layout { grid-template-columns: 1fr; }
+      .topbar { border-radius: 26px; padding: 14px; align-items: start; flex-direction: column; }
+      .start-form { width: min(100% - 24px, 100%); }
+      .input-row { grid-template-columns: 1fr; }
+      .scene { min-height: 580px; }
+      .sidebar.collapsed { width: auto; min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">🌶️</div>
+        <div class="brand-copy">
+          <strong>마라탕 메모 의식</strong>
+          <span>메모를 히스토리에 남기고, 마라탕 장면으로 다시 꺼내는 웹 사이트</span>
+        </div>
+      </div>
+      <div class="history-head">
+        <h2>히스토리</h2>
+        <button class="compact-button" id="newMemoButton" type="button">새 메모</button>
+      </div>
+      <div class="collapsed-label">HISTORY</div>
+      <div class="history-list" id="historyList"></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <span class="mode-chip" id="modeChip">시작</span>
+          <div class="memo-label" id="memoLabel">오늘의 마라탕을 만들어보아요.</div>
+        </div>
+        <div class="top-actions">
+          <button class="top-button" id="toggleHistoryButton" type="button">히스토리 접기</button>
+          <button class="top-button" id="restoreActiveButton" type="button">최근 세션</button>
+        </div>
+      </header>
+
+      <section class="scene-shell start-mode" id="sceneShell">
+        <section class="scene start-mode" id="scene">
+          <div class="intro-card" id="startScene">
+            <div class="intro-copy">
+              <div class="eyebrow">오늘의 메모를 마라탕으로 바꿔보아요</div>
+              <h1>입력하면, 바로 조리됩니다.</h1>
+              <p>
+                메모 하나를 적고, 그 메모를 마라탕으로 요리합니다. 왼쪽에는 히스토리가 남고,
+                가운데에서는 조리와 먹기 놀이가 이어지며, 완탕하면 기록으로 저장됩니다.
+              </p>
+            </div>
+
+            <form class="start-form" id="startForm">
+              <div class="input-row">
+                <input id="memoInput" class="memo-input" type="text" placeholder="예: 내일 오전 회의 정리" autocomplete="off" />
+                <button class="primary-button" type="submit">마라탕 만들기</button>
+              </div>
+              <div class="helper-row">
+                <button class="ghost-button" id="sampleButton" type="button">예시 불러오기</button>
+                <span>첫 화면은 입력창만 중심에 두고, 시작하면 조리 화면으로 전환됩니다.</span>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <aside class="receipt" id="receiptPanel">
+          <div class="receipt-head">
+            <h2>영수증</h2>
+            <span class="pill" id="receiptModePill">대기 중</span>
+          </div>
+          <div class="receipt-body" id="receiptBody"></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" aria-live="polite"></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "maratang-memo-ritual.v1";
+    const INGREDIENTS = [
+      { id: "beef", name: "소고기", price: 1200, emoji: "🥩" },
+      { id: "glass", name: "당면", price: 700, emoji: "🧵" },
+      { id: "mushroom", name: "버섯", price: 500, emoji: "🍄" },
+      { id: "fishball", name: "피쉬볼", price: 800, emoji: "⚪" },
+      { id: "tofu", name: "두부", price: 600, emoji: "◼️" },
+      { id: "cabbage", name: "청경채", price: 450, emoji: "🥬" },
+      { id: "sausage", name: "소시지", price: 650, emoji: "🌭" },
+      { id: "corn", name: "옥수수", price: 400, emoji: "🌽" },
+      { id: "shrimp", name: "새우", price: 1100, emoji: "🦐" },
+      { id: "moon", name: "분모자", price: 900, emoji: "🪭" },
+      { id: "ricecake", name: "떡", price: 550, emoji: "🍥" },
+      { id: "noodle", name: "면", price: 750, emoji: "🍜" },
+    ];
+
+    const INITIAL_SPICE = 18;
+    const BROTH_BASE = 1800;
+
+    const state = loadState();
+    const ui = {
+      mode: resolveInitialMode(state),
+      detailId: null,
+      detailIndex: 0,
+      detailTimer: null,
+      toastUntil: 0,
+      toastText: "",
+      overlayUntil: 0,
+      overlayText: "",
+      overlaySub: "",
+      confetti: false,
+      collapsedHistory: false,
+      dragIngredientId: null,
+      lastEatAt: 0,
+      eatCombo: 0,
+      stunTicker: null,
+    };
+
+    const els = {
+      app: document.getElementById("app"),
+      sidebar: document.getElementById("sidebar"),
+      historyList: document.getElementById("historyList"),
+      sceneShell: document.getElementById("sceneShell"),
+      scene: document.getElementById("scene"),
+      startScene: document.getElementById("startScene"),
+      receiptPanel: document.getElementById("receiptPanel"),
+      receiptBody: document.getElementById("receiptBody"),
+      receiptModePill: document.getElementById("receiptModePill"),
+      modeChip: document.getElementById("modeChip"),
+      memoLabel: document.getElementById("memoLabel"),
+      startForm: document.getElementById("startForm"),
+      memoInput: document.getElementById("memoInput"),
+      sampleButton: document.getElementById("sampleButton"),
+      newMemoButton: document.getElementById("newMemoButton"),
+      toggleHistoryButton: document.getElementById("toggleHistoryButton"),
+      restoreActiveButton: document.getElementById("restoreActiveButton"),
+      overlay: document.getElementById("overlay"),
+      toast: document.getElementById("toast"),
+    };
+
+    bindEvents();
+    render();
+    startTickers();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { version: 1, activeId: null, memos: [] };
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") throw new Error("invalid state");
+        const memos = Array.isArray(parsed.memos) ? parsed.memos : [];
+        return {
+          version: 1,
+          activeId: parsed.activeId || null,
+          memos: memos.map(normalizeMemo).filter(Boolean),
+        };
+      } catch {
+        return { version: 1, activeId: null, memos: [] };
+      }
+    }
+
+    function normalizeMemo(memo) {
+      if (!memo || typeof memo !== "object") return null;
+      const timeline = Array.isArray(memo.timeline) ? memo.timeline : [];
+      const ingredients = Array.isArray(memo.ingredients) ? memo.ingredients : [];
+      return {
+        id: String(memo.id || cryptoRandomId()),
+        title: String(memo.title || "제목 없음"),
+        createdAt: Number(memo.createdAt || Date.now()),
+        updatedAt: Number(memo.updatedAt || Date.now()),
+        status: ["cooking", "eating", "stun", "complete"].includes(memo.status) ? memo.status : "cooking",
+        spice: clamp(Number(memo.spice ?? INITIAL_SPICE), 0, 100),
+        broth: Boolean(memo.broth ?? true),
+        ingredients: ingredients.filter(Boolean).map(String),
+        timeline,
+        stunEndsAt: Number(memo.stunEndsAt || 0),
+        completedAt: Number(memo.completedAt || 0),
+        note: String(memo.note || ""),
+      };
+    }
+
+    function resolveInitialMode(currentState) {
+      const active = getMemo(currentState.activeId, currentState.memos);
+      if (!active) return "start";
+      if (active.status === "complete") return "detail";
+      if (active.status === "stun") return "stun";
+      return active.status;
+    }
+
+    function bindEvents() {
+      els.startForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        createMemo(els.memoInput.value.trim());
+      });
+
+      els.sampleButton.addEventListener("click", () => {
+        els.memoInput.value = ["내일 오전 회의 정리", "빨래 돌리기", "결제 내역 확인", "독서 20분"].at(Math.floor(Math.random() * 4));
+        els.memoInput.focus();
+      });
+
+      els.newMemoButton.addEventListener("click", () => {
+        clearInterval(ui.detailTimer);
+        ui.mode = "start";
+        ui.detailId = null;
+        state.activeId = null;
+        showToast("새 메모를 시작할 준비가 되었어요.", 1600);
+        persist();
+        render();
+      });
+
+      els.toggleHistoryButton.addEventListener("click", () => {
+        ui.collapsedHistory = !ui.collapsedHistory;
+        render();
+      });
+
+      els.restoreActiveButton.addEventListener("click", () => {
+        const active = getActiveMemo();
+        if (!active) {
+          showToast("복원할 최근 세션이 없습니다.", 1500);
+          return;
+        }
+        clearInterval(ui.detailTimer);
+        ui.detailId = null;
+        ui.mode = active.status === "complete" ? "detail" : active.status;
+        state.activeId = active.id;
+        persist();
+        render();
+      });
+
+      document.addEventListener("click", onDocumentClick);
+      document.addEventListener("dragstart", onDragStart);
+      document.addEventListener("dragover", onDragOver);
+      document.addEventListener("dragleave", onDragLeave);
+      document.addEventListener("drop", onDrop);
+      document.addEventListener("pointerup", onPointerUp);
+
+      els.memoInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          createMemo(els.memoInput.value.trim());
+        }
+      });
+    }
+
+    function onDocumentClick(event) {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      const ingredientId = event.target.closest("[data-ingredient-id]")?.dataset.ingredientId;
+      const historyId = event.target.closest("[data-history-id]")?.dataset.historyId;
+      const timelineIndex = event.target.closest("[data-timeline-index]")?.dataset.timelineIndex;
+      const spiceValue = event.target.closest("[data-spice-value]")?.dataset.spiceValue;
+
+      if (historyId) {
+        openDetail(historyId);
+        return;
+      }
+
+      if (timelineIndex) {
+        ui.detailIndex = Number(timelineIndex);
+        render();
+        return;
+      }
+
+      if (action === "add-ingredient") {
+        addIngredient(ingredientId);
+        return;
+      }
+
+      if (action === "eat-bite") {
+        eatBite();
+        return;
+      }
+
+      if (action === "complete") {
+        completeCurrentMemo();
+        return;
+      }
+
+      if (action === "serve") {
+        serveCurrentMemo();
+        return;
+      }
+
+      if (action === "replay") {
+        startReplay();
+        return;
+      }
+
+      if (action === "back-start") {
+        clearInterval(ui.detailTimer);
+        ui.mode = "start";
+        ui.detailId = null;
+        state.activeId = null;
+        persist();
+        render();
+        return;
+      }
+
+      if (action === "collapse-history") {
+        ui.collapsedHistory = !ui.collapsedHistory;
+        render();
+        return;
+      }
+
+      if (action === "spice-step" && spiceValue) {
+        setSpice(Number(spiceValue));
+        return;
+      }
+
+      if (action === "close-overlay") {
+        ui.overlayUntil = 0;
+        ui.overlayText = "";
+        ui.overlaySub = "";
+        render();
+      }
+    }
+
+    function onDragStart(event) {
+      const node = event.target.closest("[data-ingredient-id]");
+      if (!node) return;
+      ui.dragIngredientId = node.dataset.ingredientId;
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("text/plain", ui.dragIngredientId);
+    }
+
+    function onDragOver(event) {
+      const node = event.target.closest("[data-drop-target]");
+      if (!node) return;
+      event.preventDefault();
+      node.classList.add("dragover");
+    }
+
+    function onDragLeave(event) {
+      const node = event.target.closest("[data-drop-target]");
+      if (!node) return;
+      node.classList.remove("dragover");
+    }
+
+    function onDrop(event) {
+      const node = event.target.closest("[data-drop-target]");
+      if (!node) return;
+      event.preventDefault();
+      node.classList.remove("dragover");
+      const ingredientId = event.dataTransfer.getData("text/plain") || ui.dragIngredientId;
+      if (!ingredientId) return;
+      if (node.dataset.dropTarget === "pot") addIngredient(ingredientId);
+      if (node.dataset.dropTarget === "mouth") eatIngredientById(ingredientId);
+      ui.dragIngredientId = null;
+    }
+
+    function onPointerUp() {
+      ui.dragIngredientId = null;
+    }
+
+    function createMemo(title) {
+      if (!title) {
+        showToast("메모 제목을 입력해 주세요.", 1600);
+        els.memoInput.focus();
+        return;
+      }
+      const now = Date.now();
+      const memo = {
+        id: cryptoRandomId(),
+        title,
+        createdAt: now,
+        updatedAt: now,
+        status: "cooking",
+        spice: INITIAL_SPICE,
+        broth: true,
+        ingredients: [],
+        timeline: [{
+          type: "create",
+          at: now,
+          title,
+          spice: INITIAL_SPICE,
+          note: "국물만 있는 빈 냄비로 시작",
+        }],
+        stunEndsAt: 0,
+        completedAt: 0,
+        note: "",
+      };
+      state.memos.unshift(memo);
+      state.activeId = memo.id;
+      ui.detailId = null;
+      ui.mode = "cooking";
+      els.memoInput.value = "";
+      showToast("주문이 들어갔어요. 마라탕을 조리해볼까요?", 1800);
+      persist();
+      render();
+    }
+
+    function addIngredient(ingredientId) {
+      const memo = getActiveMemo();
+      if (!memo || !ingredientId || memo.status === "complete" || memo.status === "stun") return;
+      const ingredient = getIngredient(ingredientId);
+      memo.ingredients.push(ingredientId);
+      memo.updatedAt = Date.now();
+      memo.timeline.push({
+        type: "ingredient-add",
+        at: memo.updatedAt,
+        ingredientId,
+        name: ingredient.name,
+        price: ingredient.price,
+        emoji: ingredient.emoji,
+        note: `${ingredient.name} 추가`,
+      });
+      if (memo.status === "cooking") memo.status = "cooking";
+      state.activeId = memo.id;
+      persist();
+      showToast(`${ingredient.name}을(를) 넣었어요.`, 1100);
+      render();
+    }
+
+    function serveCurrentMemo() {
+      const memo = getActiveMemo();
+      if (!memo || memo.status === "complete") return;
+      const now = Date.now();
+      memo.status = "eating";
+      memo.updatedAt = now;
+      memo.timeline.push({
+        type: "serve",
+        at: now,
+        note: "마라탕이 조리되어 먹기 화면으로 이동",
+      });
+      state.activeId = memo.id;
+      ui.mode = "eating";
+      ui.overlayUntil = now + 1400;
+      ui.overlayText = "마라탕이 조리되었습니다!";
+      ui.overlaySub = "손님이 마라탕을 받았습니다. 이제 먹어볼까요?";
+      showToast("먹기 화면으로 넘어갑니다.", 1100);
+      persist();
+      render();
+    }
+
+    function setSpice(value) {
+      const memo = getActiveMemo();
+      if (!memo || memo.status === "complete") return;
+      memo.spice = clamp(value, 0, 100);
+      memo.updatedAt = Date.now();
+      memo.timeline.push({
+        type: "spice-set",
+        at: memo.updatedAt,
+        spice: memo.spice,
+        note: `맵기 ${memo.spice}로 조절`,
+      });
+      if (ui.mode === "start") return;
+      persist();
+      render();
+    }
+
+    function eatBite() {
+      const memo = getActiveMemo();
+      if (!memo || memo.status === "stun" || memo.status === "complete") return;
+      const ingredientId = memo.ingredients.length ? memo.ingredients.shift() : null;
+      eatIngredientById(ingredientId, true);
+    }
+
+    function eatIngredientById(ingredientId, isBite = false) {
+      const memo = getActiveMemo();
+      if (!memo || memo.status === "stun" || memo.status === "complete") return;
+      let removed = null;
+      if (ingredientId) {
+        const idx = memo.ingredients.indexOf(ingredientId);
+        if (idx >= 0) removed = memo.ingredients.splice(idx, 1)[0];
+      }
+      const now = Date.now();
+      const fastChain = now - ui.lastEatAt < 1300;
+      ui.eatCombo = fastChain ? ui.eatCombo + 1 : 1;
+      ui.lastEatAt = now;
+      const gain = Math.min(14, 7 + ui.eatCombo * 2);
+      const spice = clamp(memo.spice + gain, 0, 100);
+      memo.spice = spice;
+      memo.updatedAt = now;
+      memo.timeline.push({
+        type: "eat",
+        at: now,
+        ingredientId: removed,
+        combo: ui.eatCombo,
+        gain,
+        spice,
+        note: removed ? `${getIngredient(removed).name}을(를) 먹음` : `한 입 먹기 +${gain}`,
+      });
+      if (removed) {
+        showToast(`${getIngredient(removed).name}을(를) 먹었어요.`, 1000);
+      } else {
+        showToast(`한 입 먹기! 맵기 +${gain}`, 1000);
+      }
+      if (memo.spice >= 100) {
+        startStun(memo);
+      } else {
+        memo.status = "eating";
+      }
+      state.activeId = memo.id;
+      persist();
+      render();
+    }
+
+    function startStun(memo) {
+      const now = Date.now();
+      memo.status = "stun";
+      memo.stunEndsAt = now + 10000;
+      memo.timeline.push({
+        type: "stun-start",
+        at: now,
+        until: memo.stunEndsAt,
+        note: "맵기 100 도달, 10초 기절",
+      });
+      ui.mode = "stun";
+      ui.overlayText = "🔥 너무 맵다! 10초 기절 중...";
+      ui.overlaySub = "백그라운드로 보내도 타이머는 계속 진행됩니다.";
+      ui.overlayUntil = memo.stunEndsAt;
+      showToast("맵기 100! 기절합니다.", 1200);
+      persist();
+      render();
+    }
+
+    function completeCurrentMemo() {
+      const memo = getActiveMemo();
+      if (!memo || memo.status === "complete") return;
+      const now = Date.now();
+      memo.status = "complete";
+      memo.completedAt = now;
+      memo.updatedAt = now;
+      memo.timeline.push({
+        type: "complete",
+        at: now,
+        note: "완탕 완료",
+      });
+      state.activeId = memo.id;
+      ui.mode = "complete";
+      ui.overlayUntil = now + 2200;
+      ui.overlayText = "마라탕이 조리되었습니다!";
+      ui.overlaySub = "손님이 마라탕을 받아갔습니다. 완탕 완료!";
+      ui.confetti = true;
+      showToast("완탕! 기록이 저장되었습니다.", 1600);
+      persist();
+      render();
+      setTimeout(() => {
+        ui.confetti = false;
+        ui.overlayUntil = 0;
+        ui.overlayText = "";
+        ui.overlaySub = "";
+        ui.mode = "detail";
+        openDetail(memo.id, false);
+      }, 2200);
+    }
+
+    function openDetail(id, save = true) {
+      const memo = getMemo(id, state.memos);
+      if (!memo) return;
+      ui.detailId = id;
+      ui.mode = "detail";
+      ui.detailIndex = 0;
+      state.activeId = id;
+      if (save) persist();
+      startReplay();
+      render();
+    }
+
+    function startReplay() {
+      clearInterval(ui.detailTimer);
+      const memo = getDetailMemo();
+      if (!memo) return;
+      ui.detailIndex = 0;
+      render();
+      ui.detailTimer = setInterval(() => {
+        const current = getDetailMemo();
+        if (!current) return clearInterval(ui.detailTimer);
+        const lastIndex = current.timeline.length - 1;
+        if (ui.detailIndex < lastIndex) {
+          ui.detailIndex += 1;
+          render();
+          return;
+        }
+        clearInterval(ui.detailTimer);
+      }, 850);
+    }
+
+    function startTickers() {
+      if (ui.stunTicker) clearInterval(ui.stunTicker);
+      ui.stunTicker = setInterval(() => {
+        const memo = getActiveMemo();
+        if (memo && memo.status === "stun" && memo.stunEndsAt) {
+          const remaining = memo.stunEndsAt - Date.now();
+          if (remaining <= 0) {
+            memo.status = "eating";
+            memo.stunEndsAt = 0;
+            memo.timeline.push({
+              type: "stun-end",
+              at: Date.now(),
+              note: "기절 종료",
+            });
+            ui.mode = "eating";
+            ui.overlayUntil = 0;
+            ui.overlayText = "";
+            ui.overlaySub = "";
+            persist();
+            render();
+          } else {
+            ui.mode = "stun";
+            ui.overlayText = `🔥 너무 맵다! ${Math.ceil(remaining / 1000)}초 기절 중...`;
+            ui.overlaySub = "맵기 100 상태입니다. 잠시만 기다리세요.";
+            renderLight();
+          }
+        }
+
+        if (ui.overlayUntil && Date.now() >= ui.overlayUntil) {
+          ui.overlayUntil = 0;
+          ui.overlayText = "";
+          ui.overlaySub = "";
+          if (ui.mode === "complete") {
+            ui.mode = "detail";
+          }
+          render();
+        }
+      }, 200);
+    }
+
+    function render() {
+      renderShell();
+      renderHistory();
+      renderTopbar();
+      renderScene();
+      renderReceipt();
+      renderOverlay();
+      persist();
+    }
+
+    function renderLight() {
+      renderTopbar();
+      renderReceipt();
+      renderOverlay();
+    }
+
+    function renderShell() {
+      const isDetail = ui.mode === "detail";
+      const isStart = ui.mode === "start";
+      els.sidebar.classList.toggle("collapsed", isDetail || ui.collapsedHistory);
+      els.sceneShell.classList.toggle("start-mode", isStart);
+      els.scene.classList.toggle("start-mode", isStart);
+    }
+
+    function renderTopbar() {
+      const memo = ui.mode === "detail" ? getDetailMemo() : getActiveMemo();
+      els.modeChip.textContent = labelForMode(ui.mode);
+      els.memoLabel.textContent = memo ? memo.title : "오늘의 마라탕을 만들어보아요.";
+      els.toggleHistoryButton.textContent = (ui.mode === "detail" || ui.collapsedHistory) ? "히스토리 펼치기" : "히스토리 접기";
+      const hasActive = Boolean(getActiveMemo());
+      els.restoreActiveButton.disabled = !hasActive;
+      els.restoreActiveButton.style.opacity = hasActive ? "1" : ".6";
+      els.restoreActiveButton.style.cursor = hasActive ? "pointer" : "not-allowed";
+    }
+
+    function renderHistory() {
+      const activeId = state.activeId;
+      const memos = [...state.memos].sort((a, b) => b.updatedAt - a.updatedAt);
+      if (!memos.length) {
+        els.historyList.innerHTML = '<div class="empty-note">아직 기록이 없어요.<br/>메모를 입력하면 여기 쌓입니다.</div>';
+        return;
+      }
+      els.historyList.innerHTML = memos.map((memo) => {
+        const active = memo.id === activeId;
+        return `
+          <button class="history-item ${active ? 'active' : ''}" type="button" data-history-id="${memo.id}">
+            <div class="history-title-row">
+              <div class="history-title">${escapeHTML(memo.title)}</div>
+              <span class="pill">${escapeHTML(statusLabel(memo.status))}</span>
+            </div>
+            <div class="history-sub">재료 ${memo.ingredients.length}개 · 맵기 ${memo.spice} · ${formatTime(memo.updatedAt)}</div>
+            <div class="history-meta">${memo.timeline.length}단계 기록됨</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderScene() {
+      const memo = ui.mode === "detail" ? getDetailMemo() : getActiveMemo();
+      if (ui.mode === "start") {
+        els.scene.innerHTML = `
+          <div class="scene-body">
+            <div class="scene-header">
+              <div>
+                <h2>오늘의 마라탕을 만들어보아요.</h2>
+                <p>입력창만 중심에 두고, 메모 제목을 적으면 바로 주문이 들어갑니다.</p>
+              </div>
+              <span class="pill">시작 상태</span>
+            </div>
+            <div class="scene-stage start-stage">
+              <div class="pot-wrap">
+                <div class="pot" style="width:min(100%, 560px); min-height: 220px;">
+                  <div class="broth"></div>
+                  <div class="broth-empty">
+                    국물만 있는 빈 냄비
+                    <span>재료는 조리 화면에서 직접 선택할 수 있어요.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="stage-actions">
+              <button class="small-button" type="button" data-action="back-start">입력 유지</button>
+              <span class="status-note">왼쪽 히스토리는 계속 보이고, 오른쪽 영수증은 조리 후 채워집니다.</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (ui.mode === "detail") {
+        const replayMemo = reconstructMemo(memo, ui.detailIndex);
+        els.scene.innerHTML = `
+          <div class="detail-layout">
+            <div class="detail-panel">
+              <div class="scene-header">
+                <div>
+                  <h2>${escapeHTML(replayMemo.title)} · 상세</h2>
+                  <p>히스토리 패널은 접고, 저장된 조리 타임라인을 넓게 다시 봅니다.</p>
+                </div>
+                <span class="pill">타임라인 재생</span>
+              </div>
+
+              <div class="scene-stage detail-stage">
+                ${renderPotScene(replayMemo, true)}
+                <div class="stage-actions">
+                  <button class="small-button" type="button" data-action="replay">리플레이</button>
+                  <button class="small-button" type="button" data-action="back-start">새 메모</button>
+                </div>
+              </div>
+            </div>
+
+            <aside class="timeline-card">
+              <div class="receipt-title">
+                <span>조리 전체 타임라인</span>
+                <span class="pill">${ui.detailIndex + 1}/${memo.timeline.length}</span>
+              </div>
+              <div class="timeline-progress">저장된 단계가 그대로 남아 있어요. 클릭하면 특정 단계로 이동합니다.</div>
+              <div class="timeline-list">
+                ${memo.timeline.map((step, index) => `
+                  <button class="timeline-item ${index === ui.detailIndex ? 'active' : ''}" type="button" data-timeline-index="${index}">
+                    <strong>${timelineTitle(step)}</strong>
+                    <small>${escapeHTML(step.note || timelineSubtitle(step))}</small>
+                  </button>
+                `).join("")}
+              </div>
+            </aside>
+          </div>
+        `;
+        return;
+      }
+
+      if (!memo) return;
+      const modeLabel = labelForMode(ui.mode);
+      const hint = ui.mode === "cooking" ? "재료를 끓이고, 맵기를 고르고, 오른쪽 영수증을 채우세요." : ui.mode === "eating" ? "이제 먹는 재미가 시작됩니다. 맵기 100에 가까워질수록 긴장감이 커집니다." : "";
+      els.scene.innerHTML = `
+        <div class="scene-body scene-grid">
+          <div class="scene-header">
+            <div>
+              <h2>${escapeHTML(memo.title)}</h2>
+              <p>${escapeHTML(hint)}</p>
+            </div>
+            <span class="pill">${escapeHTML(modeLabel)}</span>
+          </div>
+          <div class="scene-stage">
+            ${renderPotScene(memo, false)}
+            ${renderStageControls(memo)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPotScene(memo, isDetail) {
+      const ingredients = memo.ingredients.map((id) => {
+        const ing = getIngredient(id);
+        const interactive = ui.mode === 'eating' || isDetail;
+        const tag = interactive ? 'button' : 'span';
+        const actionAttr = interactive ? `data-ingredient-id="${ing.id}" data-action="eat-bite" draggable="true"` : "";
+        return `<${tag} class="ingredient-chip" ${actionAttr}${interactive ? ' type="button"' : ''}>
+          <span>${ing.emoji}</span>
+          <span>${escapeHTML(ing.name)}</span>
+          ${isDetail ? '' : `<span class="price">+${formatPrice(ing.price)}</span>`}
+        </${tag}>`;
+      }).join("");
+
+      const empty = memo.ingredients.length ? "" : `<div class="broth-empty">${memo.status === 'complete' ? '완성된 마라탕만 남았어요' : '국물만 있는 빈 냄비'}<span>${memo.status === 'eating' || memo.status === 'stun' ? '재료를 클릭하거나 드래그해 한 입씩 먹을 수 있어요.' : '재료를 추가해서 조리해 보세요.'}</span></div>`;
+
+      const spiceWidth = clamp(memo.spice, 0, 100);
+      const spiceClass = spiceWidth >= 90 ? "spice-warning" : "";
+      const statusText = memo.status === "stun" ? `기절 중 ${stunRemaining(memo)}초` : `${memo.spice}`;
+
+      return `
+        <div class="pot-wrap">
+          <div class="pot" data-drop-target="${ui.mode === 'eating' ? 'mouth' : 'pot'}">
+            <div class="broth"></div>
+            <div class="ingredients-in-pot">${ingredients || empty}</div>
+          </div>
+          <div class="spice-row">
+            <span class="spice-label">맵기</span>
+            <div class="spice-meter"><div class="spice-fill ${spiceClass}" style="width:${spiceWidth}%"></div></div>
+            <strong class="spice-label ${spiceClass}">${statusText}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStageControls(memo) {
+      if (ui.mode === "cooking") {
+        return `
+          <div class="stage-actions">
+            <button class="small-button" type="button" data-action="serve">마라탕 완성</button>
+            <button class="small-button" type="button" data-action="spice-step" data-spice-value="8">순한맛</button>
+            <button class="small-button" type="button" data-action="spice-step" data-spice-value="25">보통맛</button>
+            <button class="small-button" type="button" data-action="spice-step" data-spice-value="45">매운맛</button>
+          </div>
+          <div class="ingredient-tray">
+            <div class="ingredient-tray-head">
+              <strong>재료 칸</strong>
+              <span class="pill">드래그 / 클릭</span>
+            </div>
+            <div class="ingredient-tray-grid">
+              ${INGREDIENTS.map((ingredient) => `
+                <button class="ingredient-chip" type="button" data-ingredient-id="${ingredient.id}" data-action="add-ingredient" draggable="true">
+                  <span>${ingredient.emoji}</span>
+                  <span>${escapeHTML(ingredient.name)}</span>
+                  <span class="price">+${formatPrice(ingredient.price)}</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+          <div class="status-note">재료는 아래에서 드래그하거나 클릭해서 넣을 수 있습니다.</div>
+        `;
+      }
+
+      if (ui.mode === "eating") {
+        return `
+          <div class="stage-actions">
+            <button class="small-button" type="button" data-action="eat-bite">한 입 먹기</button>
+            <button class="small-button" type="button" data-action="complete">완탕</button>
+            <button class="small-button" type="button" data-action="spice-step" data-spice-value="${clamp(memo.spice + 5, 0, 100)}">조금 더 맵게</button>
+          </div>
+          <div class="mouth-zone" data-drop-target="mouth">입으로 끌어다 놓아도 먹을 수 있어요.</div>
+          <div class="status-note">연속해서 먹으면 맵기가 위로 확 올라갑니다. 100에 도달하면 10초 기절합니다.</div>
+        `;
+      }
+
+      if (ui.mode === "stun") {
+        return `
+          <div class="stage-actions">
+            <span class="status-note">맵기 100에 도달해 기절 중입니다. ${stunRemaining(memo)}초 뒤 자동 복귀합니다.</span>
+          </div>
+        `;
+      }
+
+      if (ui.mode === "detail") {
+        return `
+          <div class="stage-actions">
+            <button class="small-button" type="button" data-action="complete">완탕 상태 확인</button>
+            <button class="small-button" type="button" data-action="back-start">새 메모</button>
+          </div>
+        `;
+      }
+
+      return "";
+    }
+
+    function renderReceipt() {
+      const memo = ui.mode === "detail" ? reconstructMemo(getDetailMemo(), ui.detailIndex) : getActiveMemo();
+      if (ui.mode === "start" || !memo) {
+        els.receiptModePill.textContent = "대기 중";
+        els.receiptBody.innerHTML = `
+          <div class="receipt-block">
+            <div class="receipt-title"><span>아직 국물만 있어요</span><span class="pill">START</span></div>
+            <div class="receipt-note">메모를 입력하고 시작하면 오른쪽에 주문 내역이 채워집니다.</div>
+          </div>
+          <div class="receipt-block">
+            <div class="receipt-title"><span>오늘의 규칙</span><span class="pill">메모 → 마라탕</span></div>
+            <div class="receipt-note">왼쪽에는 히스토리, 가운데에는 조리 장면, 오른쪽에는 영수증이 고정됩니다.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const derived = deriveReceipt(memo);
+      els.receiptModePill.textContent = statusLabel(memo.status);
+      els.receiptBody.innerHTML = `
+        <div class="receipt-block">
+          <div class="receipt-title"><span>${escapeHTML(memo.title)}</span><span class="pill">${escapeHTML(statusLabel(memo.status))}</span></div>
+          <div class="receipt-note">${escapeHTML(memo.note || (memo.status === 'detail' ? '저장된 마라탕 장면을 다시 확인합니다.' : '주문이 들어왔어요.'))}</div>
+        </div>
+        <div class="receipt-block">
+          <div class="receipt-title"><span>재료 내역</span><span class="pill">${memo.ingredients.length}개</span></div>
+          <div class="receipt-lines">
+            ${derived.lines.map((line) => `
+              <div class="line-item">
+                <span>${escapeHTML(line.label)}</span>
+                <small>${line.count}개</small>
+                <span class="price">+${formatPrice(line.total)}</span>
+              </div>
+            `).join("") || '<div class="empty-note">아직 추가된 재료가 없어요.</div>'}
+          </div>
+        </div>
+        <div class="receipt-block">
+          <div class="receipt-title"><span>맵기</span><span class="pill">${memo.spice}</span></div>
+          <div class="receipt-note">${memo.spice >= 90 ? '맵기 과열 경고! 100에 도달하면 기절합니다.' : '조리 중에도, 먹는 중에도 맵기를 유지합니다.'}</div>
+        </div>
+        <div class="receipt-block">
+          <div class="price-total"><span>국물 기본값</span><span>${formatPrice(BROTH_BASE)}</span></div>
+          <div class="price-total"><span>합계</span><span>${formatPrice(derived.total + BROTH_BASE)}</span></div>
+        </div>
+      `;
+    }
+
+    function renderOverlay() {
+      const now = Date.now();
+      const showComplete = ui.overlayUntil && now < ui.overlayUntil && ui.mode === "complete";
+      const showStun = getActiveMemo()?.status === "stun";
+      const show = showComplete || showStun || Boolean(ui.overlayText);
+      els.overlay.classList.toggle("show", show);
+      if (!show) {
+        els.overlay.innerHTML = "";
+        return;
+      }
+
+      if (showComplete) {
+        els.overlay.innerHTML = `
+          <div class="overlay-card">
+            <div class="confetti">${ui.confetti ? createConfetti() : ""}</div>
+            <h2 class="overlay-title">${escapeHTML(ui.overlayText)}</h2>
+            <p class="overlay-sub">${escapeHTML(ui.overlaySub)}</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (showStun) {
+        const memo = getActiveMemo();
+        els.overlay.innerHTML = `
+          <div class="overlay-card">
+            <h2 class="overlay-title">${escapeHTML(ui.overlayText || `🔥 너무 맵다! ${stunRemaining(memo)}초 기절 중...`)}</h2>
+            <p class="overlay-sub">${escapeHTML(ui.overlaySub || '10초가 지나면 자동으로 먹기 화면으로 돌아갑니다.')}</p>
+          </div>
+        `;
+        return;
+      }
+
+      els.overlay.innerHTML = `
+        <div class="overlay-card">
+          <h2 class="overlay-title">${escapeHTML(ui.overlayText)}</h2>
+          <p class="overlay-sub">${escapeHTML(ui.overlaySub)}</p>
+          <div style="margin-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <button class="small-button" type="button" data-action="close-overlay">닫기</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function reconstructMemo(memo, uptoIndex) {
+      if (!memo) return null;
+      const base = {
+        ...memo,
+        ingredients: [],
+        spice: INITIAL_SPICE,
+        status: "cooking",
+        stunEndsAt: 0,
+      };
+      const steps = memo.timeline.slice(0, uptoIndex + 1);
+      for (const step of steps) {
+        if (step.type === "create") {
+          base.spice = step.spice ?? INITIAL_SPICE;
+        } else if (step.type === "ingredient-add" && step.ingredientId) {
+          base.ingredients.push(step.ingredientId);
+        } else if (step.type === "spice-set") {
+          base.spice = clamp(step.spice, 0, 100);
+        } else if (step.type === "serve") {
+          base.status = "eating";
+        } else if (step.type === "eat") {
+          if (step.ingredientId) {
+            const idx = base.ingredients.indexOf(step.ingredientId);
+            if (idx >= 0) base.ingredients.splice(idx, 1);
+          }
+          base.spice = clamp(step.spice, 0, 100);
+        } else if (step.type === "stun-start") {
+          base.status = "stun";
+          base.stunEndsAt = step.until || 0;
+          base.spice = 100;
+        } else if (step.type === "stun-end") {
+          base.status = "eating";
+        } else if (step.type === "complete") {
+          base.status = "complete";
+        }
+      }
+      return base;
+    }
+
+    function deriveReceipt(memo) {
+      const map = new Map();
+      for (const ingredientId of memo.ingredients) {
+        const ingredient = getIngredient(ingredientId);
+        const current = map.get(ingredient.id) || { ...ingredient, count: 0, total: 0 };
+        current.count += 1;
+        current.total += ingredient.price;
+        map.set(ingredient.id, current);
+      }
+      const lines = [...map.values()];
+      const total = lines.reduce((sum, line) => sum + line.total, 0);
+      return { lines, total };
+    }
+
+    function getActiveMemo() {
+      return getMemo(state.activeId, state.memos);
+    }
+
+    function getDetailMemo() {
+      return getMemo(ui.detailId || state.activeId, state.memos);
+    }
+
+    function getMemo(id, memos = state.memos) {
+      if (!id) return null;
+      return memos.find((memo) => memo.id === id) || null;
+    }
+
+    function getIngredient(id) {
+      return INGREDIENTS.find((item) => item.id === id) || INGREDIENTS[0];
+    }
+
+    function labelForMode(mode) {
+      return ({ start: "시작", cooking: "조리 중", eating: "먹는 중", stun: "기절", complete: "완탕", detail: "상세" })[mode] || "시작";
+    }
+
+    function statusLabel(status) {
+      return ({ cooking: "조리 중", eating: "먹는 중", stun: "기절", complete: "완탕", detail: "상세" })[status] || "대기";
+    }
+
+    function timelineTitle(step) {
+      return ({ create: "주문 생성", "ingredient-add": "재료 추가", "spice-set": "맵기 조절", eat: "한 입 먹기", "stun-start": "기절 시작", "stun-end": "기절 종료", complete: "완탕 완료" })[step.type] || "기록";
+    }
+
+    function timelineSubtitle(step) {
+      return step.type === "create"
+        ? "국물만 있는 빈 냄비에서 시작"
+        : step.type === "ingredient-add"
+          ? `${getIngredient(step.ingredientId).name} 추가`
+          : step.type === "eat"
+            ? (step.ingredientId ? `${getIngredient(step.ingredientId).name} 먹음` : `한 입 먹기 +${step.gain}`)
+            : step.type === "complete"
+              ? "마라탕 종료"
+              : "기록 단계";
+    }
+
+    function persist() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        // ignore write failures in static preview
+      }
+    }
+
+    function showToast(text, duration = 1300) {
+      ui.toastText = text;
+      ui.toastUntil = Date.now() + duration;
+      els.toast.textContent = text;
+      els.toast.classList.add("show");
+      setTimeout(() => {
+        if (Date.now() >= ui.toastUntil) {
+          els.toast.classList.remove("show");
+        }
+      }, duration + 60);
+    }
+
+    function createConfetti() {
+      const colors = ["#ff6b4a", "#ff9f57", "#f7c66a", "#a8f0d1", "#ffd7ea"];
+      return Array.from({ length: 24 }, (_, index) => {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.4;
+        const color = colors[index % colors.length];
+        return `<span style="left:${left}%; top:-20px; background:${color}; animation-delay:${delay}s; transform:translateY(-10px) rotate(${Math.random() * 180}deg);"></span>`;
+      }).join("");
+    }
+
+    function stunRemaining(memo) {
+      if (!memo || !memo.stunEndsAt) return 0;
+      return Math.max(0, Math.ceil((memo.stunEndsAt - Date.now()) / 1000));
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    }
+
+    function formatPrice(value) {
+      return `${Number(value).toLocaleString("ko-KR")}원`;
+    }
+
+    function cryptoRandomId() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      return `memo-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+  </script>
+</body>
+</html>

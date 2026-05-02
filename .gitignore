@@ -1,0 +1,16 @@
+.env
+.env.*
+
+.claude/
+.opencode/
+
+__pycache__/
+*.py[cod]
+
+game_state.json
+todos.json
+
+venv/
+node_modules/
+dist/
+build/

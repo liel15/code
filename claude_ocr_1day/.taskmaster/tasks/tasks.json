@@ -1,0 +1,267 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 15,
+        "title": "프로젝트 환경 설정 및 디렉토리 구조 생성",
+        "description": "GitHub 레포지토리 생성, 프로젝트 디렉토리 구조 설정, 환경변수 파일 생성",
+        "details": "GitHub에서 receipt-tracker 레포지토리를 생성하고, backend/, frontend/ 디렉토리를 만든다. .env 파일과 .env.example을 생성하여 UPSTAGE_API_KEY를 설정한다. Python 가상환경을 생성하고 requirements.txt에 필요한 패키지들을 정의한다. .gitignore 파일을 설정하여 .env, venv/, node_modules/ 등을 제외한다.",
+        "testStrategy": "uvicorn backend.main:app --reload 실행 시 FastAPI 서버가 정상 기동되고, http://localhost:8000/docs에서 Swagger UI가 열리는지 확인한다.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "FastAPI 앱 뼈대 구성 및 CORS 설정",
+        "description": "FastAPI 메인 애플리케이션 초기화, CORS 미들웨어 설정, 라우터 등록",
+        "details": "backend/main.py에서 FastAPI 앱을 초기화하고 CORSMiddleware를 추가한다. allow_origins=['*']로 설정하여 프론트엔드에서 API 호출이 가능하도록 한다. upload, expenses, summary 라우터를 등록한다. backend/data/expenses.json 파일을 빈 배열 []로 초기화한다. uploads/ 디렉토리 자동 생성 로직을 추가한다.",
+        "testStrategy": "FastAPI 서버 실행 후 /docs 엔드포인트에서 Swagger UI가 정상 표시되고, CORS 헤더가 응답에 포함되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "스토리지 서비스 구현",
+        "description": "expenses.json 파일 읽기/쓰기 기능 구현",
+        "details": "backend/services/storage_service.py에서 load_expenses(), save_expenses(), append_expense() 함수를 구현한다. load_expenses()는 expenses.json을 읽어 리스트로 반환하고, 파일이 없으면 빈 리스트를 반환한다. save_expenses()는 리스트를 JSON 파일로 저장한다. append_expense()는 UUID v4를 생성하여 새 항목에 id와 created_at을 추가한 후 저장한다.",
+        "testStrategy": "테스트 데이터로 append_expense() 호출 후 expenses.json 파일에 UUID와 타임스탬프가 포함된 데이터가 저장되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          16
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "OCR 서비스 구현 - 이미지 전처리",
+        "description": "JPG/PNG/PDF 파일을 Base64로 변환하는 전처리 기능 구현",
+        "details": "backend/services/ocr_service.py에서 이미지 전처리 함수를 구현한다. JPG/PNG는 Pillow로 읽어 Base64로 인코딩한다. PDF는 pdf2image로 첫 페이지를 이미지로 변환한 후 Base64로 인코딩한다. 파일 형식 검증 로직을 추가하여 지원하지 않는 형식은 예외를 발생시킨다. 최대 10MB 크기 제한을 적용한다.",
+        "testStrategy": "JPG, PNG, PDF 샘플 파일로 전처리 함수를 테스트하여 올바른 Base64 문자열이 반환되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "LangChain + Upstage Vision LLM 연동",
+        "description": "Upstage document-digitization-vision 모델을 사용한 OCR 파싱 체인 구현",
+        "details": "langchain-upstage의 ChatUpstage를 사용하여 Vision LLM 체인을 구성한다. 시스템 프롬프트에서 영수증 JSON 스키마를 명시하고, 한국어/영어 영수증 파싱을 지시한다. JsonOutputParser를 사용하여 LLM 응답을 구조화된 JSON으로 파싱한다. parse_receipt(file_bytes, content_type) 함수에서 전처리된 이미지를 LLM에 전달하고 결과를 반환한다.",
+        "testStrategy": "샘플 영수증 이미지로 parse_receipt() 함수를 테스트하여 store_name, receipt_date, total_amount 등이 포함된 JSON이 반환되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          18
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "업로드 API 엔드포인트 구현",
+        "description": "POST /api/upload 엔드포인트 구현 및 파일 검증 로직 추가",
+        "details": "backend/routers/upload.py에서 POST /api/upload 엔드포인트를 구현한다. UploadFile을 수신하여 파일 형식(JPG/PNG/PDF)과 크기(10MB 이하)를 검증한다. 검증 통과 시 OCR 서비스를 호출하여 파싱 결과를 반환한다. 파일 오류 시 400, OCR 실패 시 500 HTTPException을 발생시킨다. UUID와 created_at을 추가하여 완전한 지출 객체를 반환한다.",
+        "testStrategy": "curl -X POST /api/upload -F 'file=@receipt.jpg' 명령으로 테스트하여 구조화된 JSON이 반환되고, 10MB 초과 파일은 400 오류가 반환되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "지출 CRUD API 엔드포인트 구현",
+        "description": "GET, DELETE, PUT /api/expenses 엔드포인트 구현",
+        "details": "backend/routers/expenses.py에서 지출 CRUD API를 구현한다. GET /api/expenses는 from, to 쿼리 파라미터로 날짜 필터링을 지원한다. DELETE /api/expenses/{id}는 UUID로 항목을 찾아 제거하고, 없으면 404를 반환한다. PUT /api/expenses/{id}는 요청 Body로 필드를 부분 업데이트한다. 모든 변경사항은 storage_service를 통해 expenses.json에 반영한다.",
+        "testStrategy": "Postman으로 GET, DELETE, PUT 엔드포인트를 테스트하여 정상 응답과 오류 상황(404 등)이 올바르게 처리되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          20
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "통계 API 엔드포인트 구현",
+        "description": "GET /api/summary 엔드포인트로 지출 합계 통계 제공",
+        "details": "backend/routers/summary.py에서 GET /api/summary 엔드포인트를 구현한다. 전체 지출 합계, 이번 달 지출 합계, 카테고리별 지출 요약을 계산하여 반환한다. month 쿼리 파라미터로 특정 월 필터링을 지원한다. 날짜 파싱과 집계 로직을 구현하여 정확한 통계를 제공한다.",
+        "testStrategy": "GET /api/summary 호출 시 total_amount, this_month_amount, category_summary가 포함된 JSON이 반환되고, 계산된 값이 정확한지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          21
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "React + Vite 프론트엔드 환경 설정",
+        "description": "Vite 프로젝트 초기화, TailwindCSS 설정, React Router 구성",
+        "details": "frontend/ 디렉토리에서 Vite + React 프로젝트를 초기화한다. TailwindCSS를 설치하고 tailwind.config.js에서 커스텀 애니메이션(slide-up, scale-in, fade-in)을 등록한다. React Router를 설치하여 /, /upload, /expense/:id 경로를 설정한다. Pretendard 폰트를 index.html에 CDN으로 추가한다.",
+        "testStrategy": "npm run dev 실행 시 http://localhost:5173에서 React 앱이 열리고, TailwindCSS 클래스가 정상 적용되며, 3개 경로가 라우팅되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Axios API 클라이언트 구성",
+        "description": "백엔드 API 호출을 위한 Axios 인스턴스 및 API 함수 구현",
+        "details": "frontend/src/api/axios.js에서 Axios 인스턴스를 생성하고 baseURL을 환경변수로 설정한다. uploadReceipt(), getExpenses(), deleteExpense(), updateExpense(), getSummary() 함수를 구현하여 백엔드 API를 호출한다. 오류 처리 인터셉터를 추가하여 일관된 에러 핸들링을 제공한다.",
+        "testStrategy": "API 함수들이 올바른 HTTP 메서드와 엔드포인트로 요청을 보내고, 응답 데이터를 정확히 반환하는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          23
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "공통 컴포넌트 구현 (Header, Toast, Badge)",
+        "description": "재사용 가능한 UI 컴포넌트들 구현",
+        "details": "components/Header.jsx에서 로고와 '영수증 추가' 버튼을 포함한 헤더를 구현한다. components/Toast.jsx에서 success/error/info 타입별 색상과 3초 자동 소멸 기능을 구현한다. components/Badge.jsx에서 카테고리별 색상 뱃지를 구현한다. 모든 컴포넌트는 TailwindCSS 클래스를 사용하여 디자인 가이드를 따른다.",
+        "testStrategy": "각 컴포넌트가 props에 따라 올바른 스타일과 동작을 보이는지 확인하고, Toast는 3초 후 자동으로 사라지는지 테스트한다.",
+        "priority": "medium",
+        "dependencies": [
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "DropZone 컴포넌트 구현",
+        "description": "드래그 앤 드롭 파일 업로드 컴포넌트 구현",
+        "details": "components/DropZone.jsx에서 드래그 앤 드롭과 클릭 업로드를 지원하는 컴포넌트를 구현한다. 드래그 오버 시 스타일 변경, 파일 형식 및 크기 검증, 업로드 진행 상태 표시 기능을 포함한다. 지원 형식(JPG, PNG, PDF)과 최대 크기(10MB) 안내 텍스트를 표시한다.",
+        "testStrategy": "파일을 드래그하거나 클릭하여 선택했을 때 올바른 시각적 피드백이 제공되고, 지원하지 않는 파일 형식은 거부되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "ParsePreview 컴포넌트 구현",
+        "description": "OCR 파싱 결과 미리보기 및 편집 컴포넌트 구현",
+        "details": "components/ParsePreview.jsx에서 OCR 파싱 결과를 인라인 편집 가능한 폼으로 표시한다. 가게명, 날짜, 카테고리, 품목 목록, 합계 등 모든 필드를 수정할 수 있도록 한다. 저장/취소 버튼을 제공하고, 저장 시 localStorage에 병행 저장한다. 파싱 불확실 필드는 amber 색상으로 강조 표시한다.",
+        "testStrategy": "파싱 결과가 폼에 올바르게 표시되고, 필드 수정 후 저장 시 데이터가 정확히 저장되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          26
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "업로드 페이지 구현",
+        "description": "영수증 업로드 전체 플로우를 관리하는 페이지 구현",
+        "details": "pages/UploadPage.jsx에서 DropZone → API 호출 → ProgressBar → ParsePreview 전체 흐름을 구현한다. 파일 선택 시 즉시 uploadReceipt API를 호출하고, 처리 중에는 ProgressBar를 표시한다. OCR 완료 후 ParsePreview에서 결과를 편집할 수 있도록 하고, 저장 완료 시 대시보드로 이동한다. 오류 발생 시 적절한 에러 메시지를 표시한다.",
+        "testStrategy": "이미지 업로드부터 저장까지 전체 플로우가 정상 동작하고, 각 단계에서 적절한 UI 피드백이 제공되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          27
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "ExpenseCard 컴포넌트 구현",
+        "description": "지출 내역을 카드 형태로 표시하는 컴포넌트 구현",
+        "details": "components/ExpenseCard.jsx에서 가게명, 날짜, 총 금액, 카테고리 뱃지를 포함한 카드 컴포넌트를 구현한다. 카드 클릭 시 상세 페이지로 이동하는 기능을 추가한다. hover 시 그림자 효과와 transition 애니메이션을 적용한다. 반응형 디자인을 고려하여 모바일에서도 적절히 표시되도록 한다.",
+        "testStrategy": "카드가 올바른 정보를 표시하고, 클릭 시 상세 페이지로 이동하며, hover 효과가 정상 동작하는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "SummaryCard 및 FilterBar 컴포넌트 구현",
+        "description": "지출 요약 카드와 날짜 필터 컴포넌트 구현",
+        "details": "components/SummaryCard.jsx에서 총 지출, 이번달 지출, 카테고리별 요약을 표시하는 카드를 구현한다. components/FilterBar.jsx에서 시작일/종료일 입력과 조회/초기화 버튼을 구현한다. 날짜 입력은 HTML5 date input을 사용하고, 필터 적용 시 부모 컴포넌트에 콜백으로 전달한다.",
+        "testStrategy": "SummaryCard가 정확한 통계를 표시하고, FilterBar에서 날짜 범위 선택 후 조회 시 올바른 필터 값이 전달되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          29
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "대시보드 페이지 구현",
+        "description": "메인 대시보드 페이지에서 지출 내역 목록과 통계 표시",
+        "details": "pages/Dashboard.jsx에서 컴포넌트 마운트 시 getExpenses()와 getSummary() API를 호출한다. SummaryCard, FilterBar, ExpenseCard 목록을 조합하여 대시보드를 구성한다. 날짜 필터 적용 시 API를 재호출하여 목록을 갱신한다. 지출 내역이 없을 때 Empty State를 표시한다. 반응형 그리드(grid-cols-1 sm:grid-cols-2 lg:grid-cols-3)를 적용한다.",
+        "testStrategy": "대시보드 진입 시 저장된 지출 내역과 통계가 표시되고, 날짜 필터가 정상 동작하며, Empty State가 적절히 표시되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          30
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "Modal 컴포넌트 및 지출 상세 페이지 구현",
+        "description": "삭제 확인 모달과 지출 상세/수정 페이지 구현",
+        "details": "components/Modal.jsx에서 삭제 확인 다이얼로그를 구현한다. pages/ExpenseDetail.jsx에서 ID로 지출 항목을 조회하고, 원본 이미지 미리보기와 편집 폼을 제공한다. 수정 저장 시 updateExpense API를 호출하고, 삭제 시 Modal 확인 후 deleteExpense API를 호출한다. 성공 시 Toast 알림을 표시하고 대시보드로 이동한다.",
+        "testStrategy": "상세 페이지에서 정보 수정과 삭제가 정상 동작하고, Modal 확인 플로우가 올바르게 작동하는지 확인한다.",
+        "priority": "low",
+        "dependencies": [
+          31
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Vercel 배포 설정 및 환경변수 구성",
+        "description": "Vercel 배포를 위한 설정 파일 작성 및 환경변수 등록",
+        "details": "vercel.json 파일을 작성하여 프론트엔드 빌드(@vercel/static-build)와 백엔드 서버리스(@vercel/python) 라우팅을 설정한다. GitHub 레포지토리를 Vercel에 연동하고, UPSTAGE_API_KEY 환경변수를 등록한다. 프로덕션 환경에서 API 경로가 올바르게 라우팅되도록 설정한다.",
+        "testStrategy": "Vercel 배포 후 프론트엔드와 백엔드 모두 정상 동작하고, 환경변수가 올바르게 주입되는지 확인한다.",
+        "priority": "medium",
+        "dependencies": [
+          32
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "E2E 시나리오 테스트 및 배포 검증",
+        "description": "전체 애플리케이션 플로우 테스트 및 배포 환경 검증",
+        "details": "Vercel 배포 URL에서 영수증 업로드부터 저장, 조회, 수정, 삭제까지 전체 E2E 시나리오를 테스트한다. JPG, PNG, PDF 파일 업로드, OCR 파싱, 날짜 필터링, 통계 표시 등 모든 핵심 기능이 정상 동작하는지 확인한다. 브라우저 콘솔에서 CORS 오류나 기타 에러가 없는지 점검한다. 10MB 초과 파일과 지원하지 않는 형식에 대한 오류 처리도 검증한다.",
+        "testStrategy": "Must Have 기능(업로드→파싱→저장→조회)이 모두 통과하고, Should Have 기능들도 정상 동작하며, 오류 상황에서 적절한 메시지가 표시되는지 확인한다.",
+        "priority": "high",
+        "dependencies": [
+          33
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-04-28T08:51:21.529Z",
+      "updated": "2026-04-28T08:59:42.947Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

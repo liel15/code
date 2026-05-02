@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마라탕 메모 의식</title>
+  <style>
+    :root {
+      --bg: #170705;
+      --panel: rgba(40, 15, 12, 0.88);
+      --panel2: rgba(56, 20, 15, 0.96);
+      --line: rgba(255,255,255,0.09);
+      --text: #fff4ed;
+      --muted: #d7b6ae;
+      --hot: #ff6a4a;
+      --hot2: #ff9f57;
+      --gold: #f7c66a;
+      --shadow: 0 24px 70px rgba(0,0,0,.38);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(255, 111, 74, .22), transparent 18%),
+        radial-gradient(circle at 80% 10%, rgba(247, 198, 106, .12), transparent 18%),
+        linear-gradient(180deg, #140604 0%, #1b0907 100%);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .noise {
+      position: fixed; inset: 0; pointer-events: none; opacity: .1;
+      background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 38px 38px;
+    }
+    .app {
+      width: min(1440px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 18px 0 24px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 16px;
+      min-height: 100vh;
+    }
+    .sidebar, .receipt, .scene, .topbar {
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .sidebar {
+      position: sticky; top: 18px; height: calc(100vh - 36px);
+      display: grid; grid-template-rows: auto auto 1fr; gap: 12px;
+      padding: 16px; border-radius: 28px; background: linear-gradient(180deg, rgba(56,20,15,.92), rgba(26,11,9,.98)); overflow: hidden;
+    }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .brand-mark { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: #240c08; background: linear-gradient(135deg, var(--hot2), var(--hot)); }
+    .brand strong { display:block; font-size: 1rem; letter-spacing: -.04em; }
+    .brand span { display:block; margin-top: 4px; color: var(--muted); font-size: .83rem; line-height: 1.45; }
+    .history-head { display:flex; justify-content: space-between; align-items:center; gap:10px; }
+    .history-head h2 { margin:0; font-size: .98rem; }
+    .chip, .btn, .small {
+      border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text);
+      transition: 160ms ease;
+    }
+    .btn, .small { min-height: 44px; padding: 0 14px; }
+    .btn:hover, .small:hover, .memo-item:hover { transform: translateY(-1px); }
+    .history-list { overflow:auto; display:grid; gap:10px; padding-right: 4px; }
+    .memo-item { text-align:left; padding: 14px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text); }
+    .memo-item.active { border-color: rgba(255,159,87,.45); background: rgba(255,159,87,.1); }
+    .memo-title-row { display:flex; justify-content: space-between; gap: 8px; align-items:center; }
+    .memo-title { font-weight:800; letter-spacing:-.04em; }
+    .memo-meta, .memo-sub { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+    .main { display:grid; grid-template-rows: auto auto 1fr; gap: 12px; min-width: 0; }
+    .topbar {
+      display:flex; justify-content: space-between; align-items:center; gap: 14px;
+      padding: 14px 16px; border-radius: 999px; background: rgba(42,16,13,.74);
+    }
+    .top-left { display:flex; align-items:center; gap: 12px; min-width:0; }
+    .mode-chip { padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(255,159,87,.2); background: rgba(255,159,87,.12); color: #ffd8bf; font-size: .84rem; }
+    .memo-label { color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top-actions { display:flex; gap: 10px; flex-wrap: wrap; }
+    .scene-shell { display:grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 14px; min-height: 0; }
+    .scene-shell.start-mode { grid-template-columns: minmax(0, 1fr) 280px; }
+    .scene { min-width: 0; border-radius: 30px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(39,15,12,.92), rgba(20,8,7,.98)); box-shadow: var(--shadow); min-height: 680px; overflow:hidden; }
+    .receipt { min-height: 680px; border-radius: 30px; background: linear-gradient(180deg, rgba(56,20,15,.92), rgba(23,8,7,.98)); overflow:hidden; display:grid; grid-template-rows: auto 1fr; }
+    .receipt-head { display:flex; justify-content: space-between; align-items:center; gap:10px; padding: 18px; border-bottom: 1px solid var(--line); }
+    .receipt-head h2 { margin:0; font-size: 1rem; }
+    .receipt-body { padding: 18px; overflow:auto; display:grid; gap: 14px; }
+    .receipt-block { padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.03); display:grid; gap: 10px; }
+    .receipt-title { display:flex; justify-content: space-between; gap:10px; align-items:center; font-weight:800; }
+    .empty-note, .status-note, .receipt-note, .timeline-sub { color: var(--muted); font-size: .88rem; line-height: 1.55; }
+    .pill { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color:#fbe9e5; font-size: .8rem; }
+    .start, .detail, .play { padding: 24px; display:grid; gap: 16px; }
+    .intro { min-height: 530px; border-radius: 26px; border: 1px solid var(--line); display:grid; place-items:center; padding: 24px; background: radial-gradient(circle at 50% 20%, rgba(255,159,87,.16), transparent 24%), linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); position:relative; }
+    .intro-copy { text-align:center; max-width: 680px; display:grid; gap: 14px; justify-items:center; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding: 9px 14px; border-radius: 999px; border: 1px solid rgba(255,159,87,.18); background: rgba(255,159,87,.08); color: #ffd8bf; font-size:.92rem; }
+    .intro h1 { margin:0; font-size: clamp(2.6rem, 5vw, 5rem); line-height:.95; letter-spacing:-.08em; }
+    .intro p { margin:0; max-width: 54ch; color: var(--muted); line-height:1.8; }
+    .start-form { position:absolute; left:50%; bottom: 24px; transform: translateX(-50%); width: min(620px, calc(100% - 28px)); display:grid; gap: 12px; }
+    .input-row { display:grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+    .memo-input { min-height: 58px; border-radius: 18px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: var(--text); padding: 0 18px; outline:none; }
+    .memo-input:focus { box-shadow: 0 0 0 4px rgba(255,159,87,.08); border-color: rgba(255,159,87,.5); }
+    .primary { min-height: 58px; padding: 0 20px; border-radius: 18px; border: 1px solid transparent; color: #250d09; background: linear-gradient(135deg, var(--hot2), var(--hot)); font-weight: 800; }
+    .ghost { min-height: 58px; padding: 0 16px; border-radius: 18px; border: 1px solid var(--line); color: var(--text); background: rgba(255,255,255,.04); }
+    .helper-row { display:flex; gap: 10px; flex-wrap: wrap; align-items:center; color: var(--muted); font-size: .88rem; }
+    .scene-body { padding: 24px; display:grid; gap: 16px; }
+    .scene-header { display:flex; justify-content: space-between; align-items:end; gap: 12px; }
+    .scene-header h2 { margin:0; font-size: 1.1rem; letter-spacing: -.04em; }
+    .scene-header p { margin:4px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+    .stage { min-height: 440px; border-radius: 26px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(34,14,12,.98), rgba(19,8,7,.98)); padding: 18px; display:grid; gap: 14px; align-content:start; }
+    .pot-wrap { display:grid; gap: 16px; justify-items:center; }
+    .vessel { width:min(100%, 620px); position:relative; display:grid; justify-items:center; }
+    .vessel-shell { position:relative; width:100%; min-height: 260px; display:grid; place-items:center; }
+    .vessel-shell::before,
+    .vessel-shell::after { content:""; position:absolute; inset:auto; pointer-events:none; }
+    .vessel.cooking .vessel-shell { min-height: 250px; }
+    .vessel.cooking .vessel-shell::before {
+      left: 26px; right: 26px; bottom: 42px; height: 34px; border-radius: 999px;
+      background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(255,255,255,.04)); filter: blur(.3px);
+    }
+    .vessel.cooking .vessel-shell::after {
+      left: 0; right: 0; top: 42px; height: 28px; border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)); opacity:.85;
+    }
+    .vessel.eating .vessel-shell { min-height: 280px; }
+    .vessel.eating .vessel-shell::before {
+      left: 50%; transform: translateX(-50%); bottom: 22px; width: 74%; height: 36px; border-radius: 999px;
+      background: radial-gradient(circle at 50% 0%, rgba(0,0,0,.22), rgba(0,0,0,.02)); filter: blur(.4px);
+    }
+    .vessel.eating .vessel-shell::after {
+      left: 50%; transform: translateX(-50%); top: 28px; width: 88%; height: 150px; border-radius: 0 0 48% 48% / 0 0 34% 34%;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
+      box-shadow: inset 0 -16px 26px rgba(0,0,0,.24);
+    }
+    .vessel.cooking .vessel-shell::before { box-shadow: 0 24px 60px rgba(0,0,0,.28); }
+    .vessel-handle { position:absolute; top: 78px; width: 96px; height: 96px; border-radius: 50%; border: 14px solid rgba(255,255,255,.06); }
+    .vessel-handle.left { left: 8px; }
+    .vessel-handle.right { right: 8px; }
+    .vessel.cooking .vessel-handle { display:block; }
+    .vessel.eating .vessel-handle { display:none; }
+    .vessel-body {
+      position:relative; z-index:1; width:100%; min-height: 240px; border: 1px solid rgba(255,255,255,.1); overflow:hidden;
+    }
+    .vessel.cooking .vessel-body {
+      width: min(100%, 560px); min-height: 240px; border-radius: 36px 36px 26px 26px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.12), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -10px 22px rgba(0,0,0,.18);
+    }
+    .vessel.eating .vessel-body {
+      width: min(100%, 600px); min-height: 280px; border-radius: 0 0 38% 38% / 0 0 22% 22%;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.12), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: inset 0 -18px 26px rgba(0,0,0,.22), inset 0 10px 24px rgba(255,255,255,.04);
+    }
+    .steam {
+      position:absolute; top: 0; left: 50%; width: 240px; height: 120px; transform: translateX(-50%); pointer-events:none;
+      filter: blur(2px); opacity: .7;
+    }
+    .steam span {
+      position:absolute; bottom: 0; width: 56px; height: 90px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 70%, rgba(255,255,255,.9), rgba(255,255,255,0) 72%);
+      animation: steamFloat 3.4s ease-in-out infinite;
+    }
+    .steam span:nth-child(1) { left: 22px; animation-delay: .1s; }
+    .steam span:nth-child(2) { left: 92px; animation-delay: .7s; }
+    .steam span:nth-child(3) { left: 152px; animation-delay: 1.3s; }
+    @keyframes steamFloat {
+      0%, 100% { transform: translateY(0) scale(.92); opacity: .25; }
+      50% { transform: translateY(-12px) scale(1); opacity: .8; }
+    }
+    .pot { width:100%; min-height: 240px; position:relative; overflow:hidden; }
+    .dish-illustration {
+      width: min(100%, 660px);
+      margin-inline: auto;
+      display:block;
+      filter: drop-shadow(0 24px 40px rgba(0,0,0,.28));
+    }
+    .broth { position:absolute; inset: 26px 20px 26px; border-radius: 28px; background: radial-gradient(circle at 30% 20%, rgba(255,184,135,.45), transparent 30%), radial-gradient(circle at 70% 20%, rgba(255,107,74,.32), transparent 28%), linear-gradient(180deg, rgba(255,117,72,.42), rgba(121, 27, 18, .84)); }
+    .broth::before {
+      content:""; position:absolute; inset: 12px 16px auto; height: 18px; border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,.34), rgba(255,255,255,0)); opacity:.22;
+      filter: blur(1px);
+    }
+    .broth::after { content:""; position:absolute; inset:0; background-image: radial-gradient(circle at 20% 25%, rgba(255,255,255,.08) 0 5px, transparent 7px), radial-gradient(circle at 78% 60%, rgba(255,255,255,.06) 0 4px, transparent 6px), radial-gradient(circle at 55% 34%, rgba(255,255,255,.06) 0 4px, transparent 6px); opacity:.56; }
+    .broth-rim {
+      position:absolute; left: 12px; right: 12px; top: 18px; height: 22px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.09); background: linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .utensil {
+      position:absolute; z-index:2; pointer-events:none; opacity:.95;
+    }
+    .utensil.spoon {
+      right: 22px; top: 36px; width: 120px; height: 240px;
+      transform: rotate(18deg);
+    }
+    .utensil.spoon::before {
+      content:""; position:absolute; right: 0; top: 0; width: 72px; height: 118px; border-radius: 50% 50% 42% 42%;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(205,219,229,.7));
+      box-shadow: inset 0 -8px 14px rgba(0,0,0,.08), 0 10px 20px rgba(0,0,0,.15);
+    }
+    .utensil.spoon::after {
+      content:""; position:absolute; right: 28px; top: 104px; width: 18px; height: 150px; border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(185,198,206,.82));
+    }
+    .utensil.chopsticks {
+      left: 30px; top: 48px; width: 140px; height: 120px; transform: rotate(-14deg);
+    }
+    .utensil.chopsticks::before,
+    .utensil.chopsticks::after {
+      content:""; position:absolute; left: 0; top: 36px; width: 146px; height: 8px; border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,216,191,.95), rgba(255,159,87,.95));
+      box-shadow: 0 8px 20px rgba(0,0,0,.16);
+    }
+    .utensil.chopsticks::after { top: 58px; left: 10px; width: 138px; }
+    .vessel.cooking .steam { display:block; }
+    .vessel.eating .steam { display:none; }
+    .vessel.cooking .utensil { display:none; }
+    .vessel.eating .utensil { display:block; }
+    .ingredients-in-pot { position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:8px; padding: 10px; min-height: 170px; align-content:start; }
+    .ingredient { display:inline-flex; align-items:center; gap:8px; padding: 10px 12px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: #fff6f0; user-select:none; }
+    .ingredient[draggable="true"] { cursor: grab; }
+    .ingredient .price { color:#ffd8bf; font-weight: 800; }
+    .empty-pot { position:relative; z-index:1; min-height: 156px; display:grid; place-items:center; text-align:center; padding: 20px; color:#ffd8bf; font-weight:700; }
+    .empty-pot span { display:block; margin-top: 8px; color: var(--muted); font-weight:500; font-size:.9rem; line-height:1.6; }
+    .spice-row { display:grid; grid-template-columns: auto minmax(0,1fr) auto; gap:12px; align-items:center; }
+    .spice-meter { height: 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.06); overflow:hidden; }
+    .spice-fill { height:100%; width: 18%; border-radius: inherit; background: linear-gradient(90deg, var(--hot), var(--hot2), #ff324d); box-shadow: 0 0 16px rgba(255,107,74,.35); transition: width 180ms ease; }
+    .controls, .tray-head { display:flex; gap: 10px; flex-wrap: wrap; align-items:center; }
+    .tray { display:grid; gap: 10px; padding: 14px; border-radius: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.03); }
+    .tray-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; }
+    .mouth { border-radius: 22px; border: 1px dashed rgba(255,255,255,.12); padding: 14px; text-align:center; color:#ffd8bf; background: rgba(255,255,255,.02); }
+    .mouth.dragover { background: rgba(255,159,87,.12); border-color: rgba(255,159,87,.5); box-shadow: 0 0 0 4px rgba(255,159,87,.08); }
+    .spice-side { display:grid; gap:12px; }
+    .vertical-meter { display:grid; justify-items:center; gap: 10px; padding: 18px; border-radius: 26px; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+    .track { width: 88px; height: 260px; padding: 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); display:flex; align-items:flex-end; overflow:hidden; }
+    .fill { width:100%; border-radius:999px; background: linear-gradient(180deg, #ff324d, var(--hot), var(--hot2)); box-shadow: 0 0 18px rgba(255,107,74,.35); transition: height 180ms ease; }
+    .meter-value { font-size: 1.9rem; font-weight: 900; letter-spacing: -.06em; }
+    .overlay { position: fixed; inset: 0; left: 0; transform: none; z-index: 60; display:none; place-items:center; background: rgba(8,3,2,.5); backdrop-filter: blur(10px); padding: 24px; }
+    .toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 60; }
+    .overlay.show { display:grid; }
+    .overlay-card { width:min(620px, calc(100vw - 32px)); border-radius: 30px; border:1px solid rgba(255,255,255,.1); background: linear-gradient(180deg, rgba(56,20,15,.98), rgba(18,7,6,.98)); box-shadow: var(--shadow); padding: 26px; text-align:center; position: relative; overflow:hidden; }
+    .overlay-card::before {
+      content:""; position:absolute; inset:auto 10% 18px; height: 12px; border-radius:999px;
+      background: radial-gradient(circle, rgba(255,159,87,.35), transparent 70%);
+      filter: blur(6px); opacity:.75;
+    }
+    .overlay-title { margin:0 0 8px; font-size: clamp(1.7rem, 3vw, 2.6rem); letter-spacing:-.06em; }
+    .overlay-sub { margin:0; color: var(--muted); line-height:1.7; }
+    .toast { bottom: 24px; opacity:0; transform: translateX(-50%) translateY(20px); pointer-events:none; padding: 14px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.1); background: rgba(28,10,8,.92); transition: 220ms ease; }
+    .toast.show { opacity:1; transform: translateX(-50%) translateY(0); }
+    .timeline { display:grid; gap:10px; padding: 16px; border-radius: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.04); }
+    .timeline-item { padding: 12px 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.03); display:grid; gap:4px; text-align:left; color: var(--text); }
+    .timeline-item.active { border-color: rgba(255,159,87,.32); background: rgba(255,159,87,.1); }
+    .collapsed .brand-copy, .collapsed .history-head, .collapsed .history-list { display:none; }
+    .collapsed { width: 86px; min-width: 86px; }
+    .collapsed .collapsed-label { display:grid; place-items:center; color: var(--muted); letter-spacing:.2em; writing-mode: vertical-rl; transform: rotate(180deg); min-height: 300px; }
+    .collapsed-label { display:none; }
+    .ingredient {
+      display:grid;
+      justify-items:center;
+      gap: 6px;
+      padding: 10px 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: #fff6f0;
+      user-select:none;
+      text-align:center;
+      min-width: 0;
+    }
+    .ingredient[draggable="true"] { cursor: grab; }
+    .ingredient .price { color:#ffd8bf; font-weight: 800; font-size: .8rem; }
+    .ingredient-name { font-size: .84rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; }
+    .ingredient-img {
+      width: 78px;
+      height: 58px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 16px rgba(0,0,0,.25));
+      pointer-events:none;
+      user-select:none;
+    }
+    .ingredient-mini {
+      display:inline-grid;
+      grid-auto-flow: column;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.035);
+    }
+    .ingredient-mini .ingredient-img { width: 44px; height: 34px; }
+    .ingredient-mini .ingredient-name { font-size: .78rem; }
+    .ingredient-mini .price { font-size: .74rem; }
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position:relative; height:auto; }
+      .scene-shell { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app { width: min(100% - 16px, 100%); }
+      .topbar { border-radius: 26px; flex-direction:column; align-items:start; }
+      .input-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">🌶️</div>
+        <div class="brand-copy">
+          <strong>마라탕 메모 의식</strong>
+          <span>메모를 히스토리에 남기고, 마라탕 장면으로 다시 꺼내는 독립 웹 사이트</span>
+        </div>
+      </div>
+      <div class="history-head">
+        <h2>히스토리</h2>
+        <button class="btn" id="newMemoButton" type="button">새 메모</button>
+      </div>
+      <div class="collapsed-label">HISTORY</div>
+      <div class="history-list" id="historyList"></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <span class="mode-chip" id="modeChip">시작</span>
+          <div class="memo-label" id="memoLabel">오늘의 마라탕을 만들어보아요.</div>
+        </div>
+        <div class="top-actions">
+          <button class="btn" id="toggleHistoryButton" type="button">히스토리 접기</button>
+          <button class="btn" id="restoreActiveButton" type="button">최근 세션</button>
+        </div>
+      </header>
+
+      <section class="scene-shell start-mode" id="sceneShell">
+        <section class="scene" id="scene"></section>
+        <aside class="receipt" id="receiptPanel">
+          <div class="receipt-head">
+            <h2>영수증</h2>
+            <span class="pill" id="receiptModePill">대기 중</span>
+          </div>
+          <div class="receipt-body" id="receiptBody"></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "maratang-memo-ritual-site.v1";
+    const INGREDIENTS = [
+      { id: "beef", name: "소고기", price: 1200, emoji: "🥩" },
+      { id: "glass", name: "당면", price: 700, emoji: "🧵" },
+      { id: "mushroom", name: "버섯", price: 500, emoji: "🍄" },
+      { id: "fishball", name: "피쉬볼", price: 800, emoji: "⚪" },
+      { id: "tofu", name: "두부", price: 600, emoji: "◼️" },
+      { id: "cabbage", name: "청경채", price: 450, emoji: "🥬" },
+      { id: "sausage", name: "소시지", price: 650, emoji: "🌭" },
+      { id: "shrimp", name: "새우", price: 1100, emoji: "🦐" },
+      { id: "moon", name: "분모자", price: 900, emoji: "🪭" },
+      { id: "ricecake", name: "떡", price: 550, emoji: "🍥" },
+      { id: "noodle", name: "면", price: 750, emoji: "🍜" },
+    ];
+    const INITIAL_SPICE = 18;
+    const BROTH_BASE = 1800;
+    const state = loadState();
+    const ui = { mode: "start", detailId: null, detailIndex: 0, collapsedHistory: false, detailTimer: null, stunTicker: null, dragIngredientId: null, lastEatAt: 0, eatCombo: 0, overlayUntil: 0, overlayText: "", overlaySub: "", confetti: false };
+    const els = {
+      sidebar: document.getElementById("sidebar"), historyList: document.getElementById("historyList"), sceneShell: document.getElementById("sceneShell"), scene: document.getElementById("scene"),
+      receiptPanel: document.getElementById("receiptPanel"), receiptBody: document.getElementById("receiptBody"), receiptModePill: document.getElementById("receiptModePill"), modeChip: document.getElementById("modeChip"), memoLabel: document.getElementById("memoLabel"),
+      newMemoButton: document.getElementById("newMemoButton"), toggleHistoryButton: document.getElementById("toggleHistoryButton"), restoreActiveButton: document.getElementById("restoreActiveButton"), overlay: document.getElementById("overlay"), toast: document.getElementById("toast")
+    };
+
+    bind(); render(); startTickers();
+
+    function bind() {
+      document.addEventListener("submit", (e) => {
+        if (e.target?.id !== "startForm") return;
+        e.preventDefault(); createMemo(document.getElementById("memoInput").value.trim());
+      }, true);
+      document.addEventListener("click", (e) => {
+        const action = e.target.closest("[data-action]")?.dataset.action;
+        const historyId = e.target.closest("[data-history-id]")?.dataset.historyId;
+        const timelineIndex = e.target.closest("[data-timeline-index]")?.dataset.timelineIndex;
+        const ingredientId = e.target.closest("[data-ingredient-id]")?.dataset.ingredientId;
+        const spiceValue = e.target.closest("[data-spice-value]")?.dataset.spiceValue;
+        if (historyId) return openDetail(historyId);
+        if (timelineIndex !== undefined) { ui.detailIndex = Number(timelineIndex); return render(); }
+        if (action === "start-memo") return createMemo(document.getElementById("memoInput").value.trim());
+        if (action === "add-ingredient") return addIngredient(ingredientId);
+        if (action === "eat-bite") return eatBite();
+        if (action === "serve") return serveCurrentMemo();
+        if (action === "complete") return completeCurrentMemo();
+        if (action === "replay") return startReplay();
+        if (action === "back-start") return goStart();
+        if (action === "collapse-history") { ui.collapsedHistory = !ui.collapsedHistory; return render(); }
+        if (action === "spice-step") return setSpice(Number(spiceValue));
+        if (action === "close-overlay") { ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; return render(); }
+      });
+      document.addEventListener("dragstart", (e) => {
+        const node = e.target.closest("[data-ingredient-id]"); if (!node) return; ui.dragIngredientId = node.dataset.ingredientId; e.dataTransfer.effectAllowed = "copy"; e.dataTransfer.setData("text/plain", ui.dragIngredientId);
+      });
+      document.addEventListener("dragover", (e) => { const node = e.target.closest("[data-drop-target]"); if (!node) return; e.preventDefault(); node.classList.add("dragover"); });
+      document.addEventListener("dragleave", (e) => { const node = e.target.closest("[data-drop-target]"); if (!node) return; node.classList.remove("dragover"); });
+      document.addEventListener("drop", (e) => {
+        const node = e.target.closest("[data-drop-target]"); if (!node) return; e.preventDefault(); node.classList.remove("dragover");
+        const ingredientId = e.dataTransfer.getData("text/plain") || ui.dragIngredientId; if (!ingredientId) return; if (node.dataset.dropTarget === "pot") addIngredient(ingredientId); if (node.dataset.dropTarget === "mouth") eatIngredientById(ingredientId); ui.dragIngredientId = null;
+      });
+      document.getElementById("newMemoButton").onclick = goStart;
+      document.getElementById("toggleHistoryButton").onclick = () => { ui.collapsedHistory = !ui.collapsedHistory; render(); };
+      document.getElementById("restoreActiveButton").onclick = () => { const active = getActiveMemo(); if (!active) return toast("복원할 최근 세션이 없습니다."); clearInterval(ui.detailTimer); ui.detailId = null; ui.mode = active.status === "complete" ? "detail" : active.status; state.activeId = active.id; persist(); render(); };
+    }
+
+    function loadState() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return { activeId: null, memos: [] }; const parsed = JSON.parse(raw); return { activeId: parsed.activeId || null, memos: Array.isArray(parsed.memos) ? parsed.memos.map(normalizeMemo).filter(Boolean) : [] }; } catch { return { activeId: null, memos: [] }; } }
+    function normalizeMemo(memo) { if (!memo || typeof memo !== "object") return null; return { id: String(memo.id || uid()), title: String(memo.title || "제목 없음"), createdAt: Number(memo.createdAt || Date.now()), updatedAt: Number(memo.updatedAt || Date.now()), status: ["cooking","eating","stun","complete"].includes(memo.status) ? memo.status : "cooking", spice: clamp(Number(memo.spice ?? INITIAL_SPICE), 0, 100), ingredients: Array.isArray(memo.ingredients) ? memo.ingredients.map(String) : [], timeline: Array.isArray(memo.timeline) ? memo.timeline : [], stunEndsAt: Number(memo.stunEndsAt || 0), completedAt: Number(memo.completedAt || 0), note: String(memo.note || "") }; }
+    function getMemo(id) { return state.memos.find((m) => m.id === id) || null; }
+    function getActiveMemo() { return getMemo(state.activeId); }
+    function getDetailMemo() { return getMemo(ui.detailId || state.activeId); }
+    function getIngredient(id) { return INGREDIENTS.find((x) => x.id === id) || INGREDIENTS[0]; }
+    function ingredientArt(ingredient) {
+      const art = {
+        beef: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><defs><linearGradient id="g1" x1="0" x2="1"><stop stop-color="#ff9a7b"/><stop offset="1" stop-color="#c83e2d"/></linearGradient></defs><rect width="180" height="120" rx="28" fill="#1c0b08"/><path d="M34 58c20-18 37-22 61-22 26 0 40 10 53 26 8 10 10 24 1 33-10 10-28 14-51 14-25 0-48-5-61-18-11-10-14-21-3-33Z" fill="url(#g1)"/><path d="M58 45c8-8 19-11 33-11 16 0 27 4 37 13" fill="none" stroke="#ffd3c7" stroke-width="8" stroke-linecap="round" opacity=".55"/></svg>`,
+        glass: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#130e17"/><path d="M45 27c10 0 17 7 17 17v35c0 10-7 18-17 18S28 89 28 79V44c0-10 7-17 17-17Z" fill="#e5eef8" opacity=".12"/><path d="M43 29c7 0 12 5 12 12v36c0 7-5 13-12 13s-12-6-12-13V41c0-7 5-12 12-12Z" fill="#d8e7ff" opacity=".45"/><path d="M77 27c10 0 17 7 17 17v35c0 10-7 18-17 18s-17-8-17-18V44c0-10 7-17 17-17Z" fill="#eef5ff" opacity=".9"/><path d="M109 27c10 0 17 7 17 17v35c0 10-7 18-17 18s-17-8-17-18V44c0-10 7-17 17-17Z" fill="#e5eef8" opacity=".16"/><path d="M142 27c10 0 17 7 17 17v35c0 10-7 18-17 18s-17-8-17-18V44c0-10 7-17 17-17Z" fill="#eef5ff" opacity=".72"/></svg>`,
+        mushroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#120b08"/><ellipse cx="90" cy="52" rx="58" ry="28" fill="#b47a5d"/><path d="M70 52c6 20 10 30 20 36 10-6 14-16 20-36" fill="#f2d3b8" opacity=".92"/><circle cx="78" cy="48" r="5" fill="#f7e5d7"/><circle cx="98" cy="45" r="4" fill="#f7e5d7"/><circle cx="111" cy="52" r="4" fill="#f7e5d7"/></svg>`,
+        fishball: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#0f1118"/><circle cx="62" cy="55" r="26" fill="#f6f7fb"/><circle cx="118" cy="55" r="26" fill="#f1f3f9"/><circle cx="62" cy="55" r="8" fill="#fff3c9" opacity=".7"/><circle cx="118" cy="55" r="8" fill="#fff3c9" opacity=".7"/></svg>`,
+        tofu: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#0f0b0a"/><rect x="48" y="26" width="84" height="64" rx="12" fill="#f3e9cc"/><rect x="58" y="36" width="64" height="44" rx="8" fill="#fff8e8" opacity=".85"/></svg>`,
+        cabbage: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#0f130d"/><path d="M90 24c18 0 34 8 43 22 9 14 7 32-2 44-10 13-24 18-41 18s-31-5-41-18c-9-12-11-30-2-44 9-14 25-22 43-22Z" fill="#97e0a6"/><path d="M90 30c10 9 15 19 15 30 0 12-5 22-15 32-10-10-15-20-15-32 0-11 5-21 15-30Z" fill="#c8f4cb" opacity=".86"/></svg>`,
+        sausage: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#120c0c"/><rect x="40" y="44" width="100" height="32" rx="16" fill="#d15c5c"/><rect x="48" y="50" width="84" height="20" rx="10" fill="#f18c7e" opacity=".45"/></svg>`,
+        shrimp: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#140b0a"/><path d="M62 79c20 8 44 3 58-15 9-12 11-25 3-36-9-12-25-15-39-10-17 6-28 21-31 38-1 10 2 19 9 23Z" fill="#ff9775"/><path d="M67 72c14 5 30 2 39-9" fill="none" stroke="#ffd8bf" stroke-width="6" stroke-linecap="round" opacity=".65"/></svg>`,
+        moon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#0e0a11"/><path d="M43 62c18-20 42-28 73-24 11 2 18 10 18 19 0 9-7 17-18 19-31 4-55-4-73-24Z" fill="#f0c88e"/><path d="M57 60c10-10 26-15 47-14" fill="none" stroke="#fff3d8" stroke-width="8" stroke-linecap="round" opacity=".55"/></svg>`,
+        ricecake: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#0f0b09"/><rect x="52" y="36" width="76" height="48" rx="12" fill="#f3e9d6"/><rect x="60" y="44" width="60" height="32" rx="10" fill="#fff7eb" opacity=".85"/></svg>`,
+        noodle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120"><rect width="180" height="120" rx="28" fill="#120a08"/><path d="M46 44c26-22 62-22 88 0" fill="none" stroke="#f4db98" stroke-width="8" stroke-linecap="round"/><path d="M42 62c30-20 66-20 96 0" fill="none" stroke="#ffd98d" stroke-width="8" stroke-linecap="round"/><path d="M50 78c24-16 56-16 80 0" fill="none" stroke="#f4db98" stroke-width="8" stroke-linecap="round"/></svg>`,
+      };
+      const svg = art[ingredient.id] || art.noodle;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+    function labelForMode(mode) { return ({ start: "시작", cooking: "조리 중", eating: "먹는 중", stun: "기절", complete: "완탕", detail: "상세" })[mode] || "시작"; }
+    function statusLabel(status) { return ({ cooking: "조리 중", eating: "먹는 중", stun: "기절", complete: "완탕", detail: "상세" })[status] || "대기"; }
+    function persist() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} }
+    function toast(text, duration = 1300) { els.toast.textContent = text; els.toast.classList.add("show"); setTimeout(() => { els.toast.classList.remove("show"); }, duration); }
+    function goStart() { clearInterval(ui.detailTimer); ui.detailId = null; ui.mode = "start"; state.activeId = null; persist(); render(); }
+
+    function createMemo(title) { if (!title) return toast("메모 제목을 입력해 주세요."); const now = Date.now(); const memo = { id: uid(), title, createdAt: now, updatedAt: now, status: "cooking", spice: INITIAL_SPICE, ingredients: [], timeline: [{ type: "create", at: now, title, spice: INITIAL_SPICE, note: "국물만 있는 빈 냄비로 시작" }], stunEndsAt: 0, completedAt: 0, note: "" }; state.memos.unshift(memo); state.activeId = memo.id; ui.mode = "cooking"; ui.detailId = null; document.getElementById("memoInput").value = ""; toast("주문이 들어갔어요. 조리를 시작합니다.", 1600); persist(); render(); }
+    function addIngredient(ingredientId) { const memo = getActiveMemo(); if (!memo || !ingredientId || memo.status === "complete" || memo.status === "stun") return; const ing = getIngredient(ingredientId); memo.ingredients.push(ingredientId); memo.updatedAt = Date.now(); memo.timeline.push({ type: "ingredient-add", at: memo.updatedAt, ingredientId, name: ing.name, price: ing.price, emoji: ing.emoji, note: `${ing.name} 추가` }); state.activeId = memo.id; persist(); toast(`${ing.name}을(를) 넣었어요.`); render(); }
+    function serveCurrentMemo() { const memo = getActiveMemo(); if (!memo || memo.status === "complete") return; const now = Date.now(); memo.status = "eating"; memo.updatedAt = now; memo.timeline.push({ type: "serve", at: now, note: "마라탕이 조리되어 먹기 화면으로 이동" }); state.activeId = memo.id; ui.mode = "eating"; ui.overlayText = "마라탕이 조리되었습니다!"; ui.overlaySub = "손님이 마라탕을 받았습니다. 이제 먹어볼까요?"; ui.overlayUntil = now + 1400; toast("먹기 화면으로 넘어갑니다."); persist(); render(); }
+    function setSpice(value) { const memo = getActiveMemo(); if (!memo || memo.status === "complete") return; memo.spice = clamp(value, 0, 100); memo.updatedAt = Date.now(); memo.timeline.push({ type: "spice-set", at: memo.updatedAt, spice: memo.spice, note: `맵기 ${memo.spice}로 조절` }); persist(); render(); }
+    function eatBite() { const memo = getActiveMemo(); if (!memo || memo.status === "stun" || memo.status === "complete") return; const ingredientId = memo.ingredients.length ? memo.ingredients.shift() : null; eatIngredientById(ingredientId); }
+    function eatIngredientById(ingredientId) { const memo = getActiveMemo(); if (!memo || memo.status === "stun" || memo.status === "complete") return; let removed = null; if (ingredientId) { const idx = memo.ingredients.indexOf(ingredientId); if (idx >= 0) removed = memo.ingredients.splice(idx,1)[0]; } const now = Date.now(); const fast = now - ui.lastEatAt < 1300; ui.eatCombo = fast ? ui.eatCombo + 1 : 1; ui.lastEatAt = now; const gain = Math.min(14, 7 + ui.eatCombo * 2); memo.spice = clamp(memo.spice + gain, 0, 100); memo.updatedAt = now; memo.timeline.push({ type: "eat", at: now, ingredientId: removed, combo: ui.eatCombo, gain, spice: memo.spice, note: removed ? `${getIngredient(removed).name}을(를) 먹음` : `한 입 먹기 +${gain}` }); if (memo.spice >= 100) startStun(memo); else memo.status = "eating"; state.activeId = memo.id; persist(); toast(removed ? `${getIngredient(removed).name}을(를) 먹었어요.` : `한 입 먹기! 맵기 +${gain}`); render(); }
+    function startStun(memo) { const now = Date.now(); memo.status = "stun"; memo.stunEndsAt = now + 10000; memo.timeline.push({ type: "stun-start", at: now, until: memo.stunEndsAt, spiceBeforeReset: memo.spice, resetTo: 50, note: "맵기 100 도달, 10초 기절" }); memo.spice = 50; ui.mode = "stun"; ui.overlayText = "🔥 너무 맵다! 10초 기절 중..."; ui.overlaySub = "백그라운드로 보내도 타이머는 계속 진행됩니다."; ui.overlayUntil = memo.stunEndsAt; persist(); render(); }
+    function completeCurrentMemo() { const memo = getActiveMemo(); if (!memo || memo.status === "complete") return; const now = Date.now(); memo.status = "complete"; memo.completedAt = now; memo.updatedAt = now; memo.timeline.push({ type: "complete", at: now, note: "완탕 완료" }); state.activeId = memo.id; ui.mode = "complete"; ui.overlayText = "마라탕이 조리되었습니다!"; ui.overlaySub = "손님이 마라탕을 받아갔습니다. 완탕 완료!"; ui.overlayUntil = now + 2200; ui.confetti = true; toast("완탕! 기록이 저장되었습니다."); persist(); render(); setTimeout(() => { ui.confetti = false; ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; ui.mode = "detail"; openDetail(memo.id, false); }, 2200); }
+    function openDetail(id, save = true) { const memo = getMemo(id); if (!memo) return; clearInterval(ui.detailTimer); ui.detailId = id; ui.detailIndex = 0; ui.mode = "detail"; state.activeId = id; if (save) persist(); startReplay(); render(); }
+    function startReplay() { clearInterval(ui.detailTimer); const memo = getDetailMemo(); if (!memo) return; ui.detailIndex = 0; render(); ui.detailTimer = setInterval(() => { const current = getDetailMemo(); if (!current) return clearInterval(ui.detailTimer); if (ui.detailIndex < current.timeline.length - 1) { ui.detailIndex += 1; render(); return; } clearInterval(ui.detailTimer); }, 850); }
+    function startTickers() { if (ui.stunTicker) clearInterval(ui.stunTicker); ui.stunTicker = setInterval(() => { const memo = getActiveMemo(); if (memo && memo.status === "stun" && memo.stunEndsAt) { const remaining = memo.stunEndsAt - Date.now(); if (remaining <= 0) { memo.status = "eating"; memo.stunEndsAt = 0; memo.timeline.push({ type: "stun-end", at: Date.now(), note: "기절 종료" }); ui.mode = "eating"; ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; persist(); render(); } else { ui.mode = "stun"; ui.overlayText = `🔥 너무 맵다! ${Math.ceil(remaining/1000)}초 기절 중...`; ui.overlaySub = "맵기 100 상태입니다. 잠시만 기다리세요."; renderLight(); } } if (ui.overlayUntil && Date.now() >= ui.overlayUntil) { ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; if (ui.mode === "complete") ui.mode = "detail"; render(); } }, 200); }
+
+    function render() { renderShell(); renderHistory(); renderTopbar(); renderScene(); renderReceipt(); renderOverlay(); persist(); }
+    function renderLight() { renderTopbar(); renderReceipt(); renderOverlay(); }
+    function renderShell() { const isDetail = ui.mode === "detail"; const isStart = ui.mode === "start"; els.sidebar.classList.toggle("collapsed", isDetail || ui.collapsedHistory); els.sceneShell.classList.toggle("start-mode", isStart); }
+    function renderTopbar() { const memo = ui.mode === "detail" ? getDetailMemo() : getActiveMemo(); els.modeChip.textContent = labelForMode(ui.mode); els.memoLabel.textContent = memo ? memo.title : "오늘의 마라탕을 만들어보아요."; els.toggleHistoryButton.textContent = (ui.mode === "detail" || ui.collapsedHistory) ? "히스토리 펼치기" : "히스토리 접기"; const has = Boolean(getActiveMemo()); els.restoreActiveButton.disabled = !has; els.restoreActiveButton.style.opacity = has ? "1" : ".6"; els.restoreActiveButton.style.cursor = has ? "pointer" : "not-allowed"; }
+    function renderHistory() { const memos = [...state.memos].sort((a,b) => b.updatedAt - a.updatedAt); if (!memos.length) { els.historyList.innerHTML = '<div class="empty-note">아직 기록이 없어요.<br/>메모를 입력하면 여기 쌓입니다.</div>'; return; } els.historyList.innerHTML = memos.map((memo) => `<button class="memo-item ${memo.id === state.activeId ? 'active' : ''}" type="button" data-history-id="${memo.id}"><div class="memo-title-row"><div class="memo-title">${escapeHTML(memo.title)}</div><span class="pill">${statusLabel(memo.status)}</span></div><div class="memo-sub">재료 ${memo.ingredients.length}개 · 맵기 ${memo.spice} · ${formatTime(memo.updatedAt)}</div><div class="memo-meta">${memo.timeline.length}단계 기록됨</div></button>`).join(""); }
+    function renderScene() {
+      try {
+        if (ui.mode === "start") return renderStartScene();
+        if (ui.mode === "detail") return renderDetailScene();
+        return renderPlayScene();
+      } catch (error) {
+        console.error("renderScene failed", error);
+        return renderFallbackScene(error);
+      }
+    }
+
+    function renderFallbackScene(error) {
+      const memo = getActiveMemo();
+      const title = memo ? memo.title : "마라탕 메모";
+      const modeText = ui.mode === "eating" ? "먹는 중" : ui.mode === "stun" ? "기절" : "조리 중";
+      els.scene.innerHTML = `<div class="scene-body"><div class="scene-header"><div><h2>${escapeHTML(title)}</h2><p>화면 렌더링 중 문제가 발생했어요. 기능은 유지하고, 최소 조리 화면으로 보여줍니다.</p></div><span class="pill">${modeText}</span></div><div class="stage"><div class="empty-pot">마라탕 화면을 불러오는 중입니다.<span>잠시 후 다시 시도해 주세요.</span></div><div class="status-note">${escapeHTML(String(error?.message || "렌더링 오류"))}</div></div></div>`;
+    }
+    function renderStartScene() { els.scene.innerHTML = `<div class="start"><div class="intro"><div class="intro-copy"><div class="eyebrow">오늘의 메모를 마라탕으로 바꿔보아요</div><h1>입력하면, 바로 조리됩니다.</h1><p>메모 하나를 적고, 그 메모를 마라탕으로 요리합니다. 왼쪽에는 히스토리가 남고, 가운데에서는 조리와 먹기 놀이가 이어지며, 완탕하면 기록으로 저장됩니다.</p></div><form class="start-form" id="startForm"><div class="input-row"><input id="memoInput" class="memo-input" type="text" placeholder="예: 내일 오전 회의 정리" autocomplete="off" /><button class="primary" type="button" data-action="start-memo">조리 시작하기</button></div><div class="helper-row"><button class="ghost" id="sampleButton" type="button">예시 불러오기</button><span>첫 화면은 입력창만 중심에 두고, 시작하면 조리 화면으로 전환됩니다.</span></div></form></div></div>`; document.getElementById("sampleButton").onclick = () => { document.getElementById("memoInput").value = ["내일 오전 회의 정리", "빨래 돌리기", "결제 내역 확인", "독서 20분"][Math.floor(Math.random()*4)]; document.getElementById("memoInput").focus(); }; }
+    function renderDetailScene() { const memo = reconstructMemo(getDetailMemo(), ui.detailIndex); if (!memo) return; els.scene.innerHTML = `<div class="detail"><div class="scene-header"><div><h2>${escapeHTML(memo.title)} · 상세</h2><p>히스토리 패널을 접고, 저장된 조리 타임라인을 넓게 다시 봅니다.</p></div><span class="pill">타임라인 재생</span></div><div class="stage detail-stage">${renderPotScene(memo, true)}<div class="controls"><button class="small" data-action="replay" type="button">리플레이</button><button class="small" data-action="back-start" type="button">새 메모</button></div></div><div class="timeline"><div class="receipt-title"><span>조리 전체 타임라인</span><span class="pill">${ui.detailIndex + 1}/${getDetailMemo().timeline.length}</span></div><div class="timeline-sub">저장된 단계가 그대로 남아 있어요. 클릭하면 특정 단계로 이동합니다.</div>${getDetailMemo().timeline.map((step, index) => `<button class="timeline-item ${index===ui.detailIndex ? 'active' : ''}" type="button" data-timeline-index="${index}"><strong>${timelineTitle(step)}</strong><small>${escapeHTML(step.note || timelineSubtitle(step))}</small></button>`).join("")}</div></div>`; }
+    function renderPlayScene() { const memo = getActiveMemo(); if (!memo) return; const hint = ui.mode === "cooking" ? "재료를 끓이고, 맵기를 고르고, 오른쪽 영수증을 채우세요." : ui.mode === "eating" ? "이제 먹는 재미가 시작됩니다. 맵기 100에 가까워질수록 긴장감이 커집니다." : ui.mode === "stun" ? "맵기 100에 도달해 기절 중입니다. 잠시만 기다리세요." : ""; els.scene.innerHTML = `<div class="scene-body"><div class="scene-header"><div><h2>${escapeHTML(memo.title)}</h2><p>${escapeHTML(hint)}</p></div><span class="pill">${labelForMode(ui.mode)}</span></div><div class="stage">${renderPotScene(memo, false)}${renderStageControls(memo)}</div></div>`; }
+    function renderPotScene(memo, isDetail) { const vesselMode = ui.mode === "cooking" ? "cooking" : "eating"; const illustration = dishIllustration(memo, vesselMode, isDetail); const spiceWidth = clamp(memo.spice, 0, 100); return `<div class="pot-wrap"><div class="vessel ${vesselMode}" data-drop-target="${ui.mode === 'eating' ? 'mouth' : 'pot'}"><div class="vessel-shell"><div class="vessel-handle left"></div><div class="vessel-handle right"></div><div class="vessel-body">${illustration}</div></div></div><div class="spice-row"><span class="pill">맵기</span><div class="spice-meter"><div class="spice-fill" style="width:${spiceWidth}%"></div></div><strong class="pill">${memo.status === 'stun' ? `기절 중 ${stunRemaining(memo)}초` : memo.spice}</strong></div></div>`; }
+    function renderStageControls(memo) { if (ui.mode === "cooking") return `<div class="controls"><button class="small" data-action="serve" type="button">마라탕 완성</button><button class="small" data-action="spice-step" data-spice-value="8" type="button">순한맛</button><button class="small" data-action="spice-step" data-spice-value="25" type="button">보통맛</button><button class="small" data-action="spice-step" data-spice-value="45" type="button">매운맛</button></div><div class="tray"><div class="tray-head"><strong>재료 칸</strong><span class="pill">드래그 / 클릭</span></div><div class="tray-grid">${INGREDIENTS.map((i) => `<button class="ingredient ingredient-mini" type="button" data-ingredient-id="${i.id}" data-action="add-ingredient" draggable="true"><img class="ingredient-img" src="${ingredientArt(i)}" alt="${escapeHTML(i.name)}"/><span class="ingredient-name">${escapeHTML(i.name)}</span><span class="price">+${formatPrice(i.price)}</span></button>`).join("")}</div></div><div class="status-note">재료는 아래에서 드래그하거나 클릭해서 넣을 수 있습니다.</div>`; if (ui.mode === "eating") return `<div class="controls"><button class="small" data-action="eat-bite" type="button">한 입 먹기</button><button class="small" data-action="complete" type="button">완탕</button><button class="small" data-action="spice-step" data-spice-value="${clamp(memo.spice + 5, 0, 100)}" type="button">조금 더 맵게</button></div><div class="mouth" data-drop-target="mouth">입으로 끌어다 놓아도 먹을 수 있어요.</div><div class="status-note">연속해서 먹으면 맵기가 위로 확 올라갑니다. 100에 도달하면 10초 기절합니다.</div>`; if (ui.mode === "stun") return `<div class="controls"><span class="status-note">맵기 100에 도달해 기절 중입니다. ${stunRemaining(memo)}초 뒤 자동 복귀합니다.</span></div>`; if (ui.mode === "detail") return `<div class="controls"><button class="small" data-action="complete" type="button">완탕 상태 확인</button><button class="small" data-action="back-start" type="button">새 메모</button></div>`; return ""; }
+
+    function dishIllustration(memo, mode, isDetail) {
+      const items = renderDishItems(memo, isDetail);
+      const itemCount = Math.max(items.length, 1);
+      const soupScale = mode === "eating" ? 1.04 : 1;
+      const bowlR = mode === "eating" ? 244 : 220;
+      const innerR = mode === "eating" ? 182 : 170;
+      const steam = mode === "cooking"
+        ? `<g opacity=".7"><path d="M250 64c20-36 10-54-6-78" stroke="#f3f7fb" stroke-width="14" stroke-linecap="round" fill="none" opacity=".65"/><path d="M360 54c20-30 15-52-2-76" stroke="#f3f7fb" stroke-width="14" stroke-linecap="round" fill="none" opacity=".55"/><path d="M476 60c18-32 10-54-8-78" stroke="#f3f7fb" stroke-width="14" stroke-linecap="round" fill="none" opacity=".5"/></g>`
+        : `<g opacity=".0"></g>`;
+      return `
+        <svg class="dish-illustration" viewBox="0 0 720 520" role="img" aria-label="마라탕 일러스트">
+          <defs>
+            <radialGradient id="soupGlow" cx="50%" cy="35%" r="68%">
+              <stop offset="0%" stop-color="#ffb166" stop-opacity=".48" />
+              <stop offset="45%" stop-color="#ff7b4a" stop-opacity=".92" />
+              <stop offset="100%" stop-color="#8f2313" stop-opacity="1" />
+            </radialGradient>
+            <radialGradient id="rimShadow" cx="50%" cy="40%" r="70%">
+              <stop offset="70%" stop-color="#171717" stop-opacity="0" />
+              <stop offset="100%" stop-color="#000" stop-opacity=".55" />
+            </radialGradient>
+            <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".45" />
+            </filter>
+            <filter id="paint" x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency=".014" numOctaves="2" seed="4" result="noise"/>
+              <feColorMatrix in="noise" type="saturate" values="0" result="gray"/>
+              <feComponentTransfer in="gray"><feFuncA type="table" tableValues="0 0 .12 .2"/></feComponentTransfer>
+            </filter>
+            <linearGradient id="bowlBody" x1="0" x2="1">
+              <stop offset="0%" stop-color="#090909"/>
+              <stop offset="50%" stop-color="#262626"/>
+              <stop offset="100%" stop-color="#0b0b0b"/>
+            </linearGradient>
+            <linearGradient id="bowlLip" x1="0" x2="1">
+              <stop offset="0%" stop-color="#252525"/>
+              <stop offset="50%" stop-color="#111"/>
+              <stop offset="100%" stop-color="#2c2c2c"/>
+            </linearGradient>
+            <linearGradient id="highlight" x1="0" x2="1">
+              <stop offset="0%" stop-color="#fff" stop-opacity=".3"/>
+              <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          ${steam}
+
+          <ellipse cx="360" cy="420" rx="250" ry="52" fill="#000" opacity=".34" filter="url(#softShadow)"/>
+
+          <path d="M170 120c0-50 85-90 190-90s190 40 190 90-85 90-190 90-190-40-190-90Z" fill="url(#bowlLip)"/>
+          <path d="M130 128c0-68 103-122 230-122s230 54 230 122-103 122-230 122-230-54-230-122Z" fill="url(#bowlBody)"/>
+          <ellipse cx="360" cy="136" rx="204" ry="102" fill="#1a1a1a"/>
+          <ellipse cx="360" cy="138" rx="196" ry="94" fill="url(#soupGlow)"/>
+          <ellipse cx="360" cy="126" rx="182" ry="82" fill="rgba(255,255,255,.04)"/>
+          <ellipse cx="360" cy="136" rx="198" ry="96" fill="none" stroke="#ff8d4f" stroke-width="8" opacity=".6"/>
+          <ellipse cx="360" cy="138" rx="200" ry="98" fill="none" stroke="#2d0f08" stroke-width="10" opacity=".5"/>
+          <path d="M186 148c46-54 97-82 174-92 98-12 166 17 204 70" fill="none" stroke="url(#highlight)" stroke-width="12" stroke-linecap="round" opacity=".45"/>
+          <g filter="url(#paint)" opacity=".72">
+            <path d="M176 162c88-24 146-45 184-58 58-19 108-17 176 10 28 10 50 27 60 52-28 29-72 44-128 48-84 6-168-9-244-42-20-8-35-17-48-30Z" fill="rgba(255,255,255,.02)"/>
+          </g>
+          <g transform="translate(360 138) scale(${soupScale})">
+            ${items.map((item) => item).join("")}
+          </g>
+
+          <path d="M188 126c28-29 68-48 122-58" fill="none" stroke="#fff6d8" stroke-width="10" stroke-linecap="round" opacity=".12"/>
+          <path d="M430 86c42 5 78 24 106 54" fill="none" stroke="#fff6d8" stroke-width="10" stroke-linecap="round" opacity=".12"/>
+          <ellipse cx="360" cy="137" rx="194" ry="92" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="14"/>
+          <ellipse cx="360" cy="135" rx="188" ry="88" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3"/>
+        </svg>
+      `;
+    }
+
+    function renderDishItems(memo, isDetail) {
+      const ids = memo.ingredients.length ? memo.ingredients : ["beef", "mushroom", "shrimp", "noodle", "cabbage", "moon", "fishball"];
+      const positions = [
+        [-112, -60, -18], [-54, -96, 8], [8, -88, 16], [82, -72, 12], [116, -18, -8],
+        [88, 50, 12], [18, 86, 6], [-68, 72, -10], [-126, 22, 18], [-14, -4, 0]
+      ];
+      return ids.slice(0, 10).map((id, index) => renderDishItem(getIngredient(id), positions[index % positions.length], index, isDetail)).join("");
+    }
+
+    function renderDishItem(ingredient, pos, index, isDetail) {
+      const [x, y, rot] = pos;
+      const scale = 0.92 + (index % 3) * 0.08;
+      const art = ingredientDishArt(ingredient.id);
+      return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${scale})">${art}</g>`;
+    }
+
+    function ingredientDishArt(id) {
+      const art = {
+        beef: `<path d="M-62 -16c18-20 41-32 73-36 30-4 55 4 76 24 16 16 14 36-2 50-18 16-45 24-81 22-36-2-63-12-79-28-12-12-12-24 13-32Z" fill="#e46e52" stroke="#2a0e0a" stroke-width="5"/><path d="M-36 -20c24-18 56-22 94-12" fill="none" stroke="#ffd8c6" stroke-width="8" stroke-linecap="round" opacity=".48"/>`,
+        glass: `<g><path d="M-48 -44c8 0 14 6 14 14v72c0 8-6 14-14 14s-14-6-14-14v-72c0-8 6-14 14-14Z" fill="#ecf5ff" opacity=".82" stroke="#2a0e0a" stroke-width="5"/><path d="M-18 -44c8 0 14 6 14 14v72c0 8-6 14-14 14s-14-6-14-14v-72c0-8 6-14 14-14Z" fill="#f7fbff" opacity=".9" stroke="#2a0e0a" stroke-width="5"/><path d="M12 -44c8 0 14 6 14 14v72c0 8-6 14-14 14s-14-6-14-14v-72c0-8 6-14 14-14Z" fill="#ecf5ff" opacity=".78" stroke="#2a0e0a" stroke-width="5"/></g>`,
+        mushroom: `<g><ellipse cx="0" cy="-8" rx="48" ry="28" fill="#b47a5d" stroke="#2a0e0a" stroke-width="5"/><path d="M-12 -6c6 22 10 32 12 42 2-10 6-20 12-42" fill="#f2d3b8" stroke="#2a0e0a" stroke-width="5"/><circle cx="-14" cy="-8" r="5" fill="#f7e5d7"/><circle cx="8" cy="-13" r="4" fill="#f7e5d7"/></g>`,
+        fishball: `<g><circle cx="-22" cy="0" r="24" fill="#f7f8fb" stroke="#2a0e0a" stroke-width="5"/><circle cx="24" cy="0" r="24" fill="#f1f3f9" stroke="#2a0e0a" stroke-width="5"/><circle cx="-22" cy="0" r="8" fill="#fff3c9" opacity=".75"/><circle cx="24" cy="0" r="8" fill="#fff3c9" opacity=".75"/></g>`,
+        tofu: `<g><rect x="-42" y="-26" width="84" height="52" rx="12" fill="#f4ead0" stroke="#2a0e0a" stroke-width="5"/><rect x="-32" y="-16" width="64" height="32" rx="8" fill="#fff8ea" opacity=".82"/></g>`,
+        cabbage: `<g><path d="M0 -42c18 0 34 8 44 23 10 14 8 32-2 46C32 39 18 46 0 46s-32-7-42-19c-10-14-12-32-2-46C-34-34-18-42 0-42Z" fill="#95dd9f" stroke="#2a0e0a" stroke-width="5"/><path d="M0 -34c10 9 16 20 16 32 0 12-6 23-16 34-10-11-16-22-16-34 0-12 6-23 16-32Z" fill="#c9f4cf" opacity=".86"/></g>`,
+        sausage: `<g><rect x="-56" y="-18" width="112" height="36" rx="18" fill="#d8675c" stroke="#2a0e0a" stroke-width="5"/><rect x="-46" y="-8" width="92" height="16" rx="8" fill="#f4a093" opacity=".42"/></g>`,
+        shrimp: `<g><path d="M-14 28c18 6 40 0 54-14 10-10 12-22 6-34-8-14-23-20-39-15-18 6-31 20-35 37-2 11 2 19 14 26Z" fill="#ff9d78" stroke="#2a0e0a" stroke-width="5"/><path d="M-6 22c14 4 28 1 38-8" fill="none" stroke="#ffd8bf" stroke-width="6" stroke-linecap="round" opacity=".7"/></g>`,
+        moon: `<g><path d="M-54 -4c16-18 38-24 66-20 10 1 17 8 17 18s-7 17-17 18c-28 4-50-2-66-16Z" fill="#f0c88e" stroke="#2a0e0a" stroke-width="5"/><path d="M-34 -4c10-9 24-12 45-10" fill="none" stroke="#fff1d0" stroke-width="8" stroke-linecap="round" opacity=".55"/></g>`,
+        ricecake: `<g><rect x="-40" y="-24" width="80" height="48" rx="12" fill="#f4ead8" stroke="#2a0e0a" stroke-width="5"/><rect x="-30" y="-14" width="60" height="28" rx="10" fill="#fff8ed" opacity=".82"/></g>`,
+        noodle: `<g><path d="M-58 -26c28-22 62-22 90 0" fill="none" stroke="#f4db98" stroke-width="9" stroke-linecap="round"/><path d="M-62 -4c30-20 68-20 96 0" fill="none" stroke="#ffd98d" stroke-width="9" stroke-linecap="round"/><path d="M-48 18c24-16 56-16 80 0" fill="none" stroke="#f4db98" stroke-width="9" stroke-linecap="round"/></g>`,
+      };
+      return art[id] || art.noodle;
+    }
+    function renderReceipt() { const memo = ui.mode === "detail" ? reconstructMemo(getDetailMemo(), ui.detailIndex) : getActiveMemo(); if (ui.mode === "start" || !memo) { els.receiptModePill.textContent = "대기 중"; els.receiptBody.innerHTML = `<div class="receipt-block"><div class="receipt-title"><span>아직 국물만 있어요</span><span class="pill">START</span></div><div class="receipt-note">메모를 입력하고 시작하면 오른쪽에 주문 내역이 채워집니다.</div></div><div class="receipt-block"><div class="receipt-title"><span>오늘의 규칙</span><span class="pill">메모 → 마라탕</span></div><div class="receipt-note">왼쪽에는 히스토리, 가운데에는 조리 장면, 오른쪽에는 영수증이 고정됩니다.</div></div>`; return; } const derived = deriveReceipt(memo); els.receiptModePill.textContent = statusLabel(memo.status); els.receiptBody.innerHTML = `<div class="receipt-block"><div class="receipt-title"><span>${escapeHTML(memo.title)}</span><span class="pill">${statusLabel(memo.status)}</span></div><div class="receipt-note">${escapeHTML(memo.note || (memo.status === 'detail' ? '저장된 마라탕 장면을 다시 확인합니다.' : '주문이 들어왔어요.'))}</div></div><div class="receipt-block"><div class="receipt-title"><span>재료 내역</span><span class="pill">${memo.ingredients.length}개</span></div>${derived.lines.map((line) => `<div class="receipt-block" style="padding:12px"><div class="receipt-title"><span>${escapeHTML(line.label)}</span><small>${line.count}개</small></div><div class="memo-sub">+${formatPrice(line.total)}</div></div>`).join("") || '<div class="empty-note">아직 추가된 재료가 없어요.</div>'}</div><div class="receipt-block"><div class="receipt-title"><span>맵기</span><span class="pill">${memo.spice}</span></div><div class="receipt-note">${memo.spice >= 90 ? '맵기 과열 경고! 100에 도달하면 기절합니다.' : '조리 중에도, 먹는 중에도 맵기를 유지합니다.'}</div></div><div class="receipt-block"><div class="receipt-title"><span>국물 기본값</span><span>${formatPrice(BROTH_BASE)}</span></div><div class="receipt-title"><span>합계</span><span>${formatPrice(derived.total + BROTH_BASE)}</span></div></div>`; }
+    function renderOverlay() { const now = Date.now(); const showComplete = ui.overlayUntil && now < ui.overlayUntil && ui.mode === "complete"; const showStun = getActiveMemo()?.status === "stun"; const show = showComplete || showStun || Boolean(ui.overlayText); els.overlay.classList.toggle("show", show); if (!show) { els.overlay.innerHTML = ""; return; } if (showComplete) { els.overlay.innerHTML = `<div class="overlay-card"><h2 class="overlay-title">${escapeHTML(ui.overlayText)}</h2><p class="overlay-sub">${escapeHTML(ui.overlaySub)}</p></div>`; return; } if (showStun) { const memo = getActiveMemo(); els.overlay.innerHTML = `<div class="overlay-card"><h2 class="overlay-title">${escapeHTML(ui.overlayText || `🔥 너무 맵다! ${stunRemaining(memo)}초 기절 중...`)}</h2><p class="overlay-sub">${escapeHTML(ui.overlaySub || '10초가 지나면 자동으로 먹기 화면으로 돌아갑니다.')}</p></div>`; return; } els.overlay.innerHTML = `<div class="overlay-card"><h2 class="overlay-title">${escapeHTML(ui.overlayText)}</h2><p class="overlay-sub">${escapeHTML(ui.overlaySub)}</p><div style="margin-top:18px;"><button class="small" data-action="close-overlay" type="button">닫기</button></div></div>`; }
+    function reconstructMemo(memo, uptoIndex) { if (!memo) return null; const base = { ...memo, ingredients: [], spice: INITIAL_SPICE, status: "cooking", stunEndsAt: 0 }; for (const step of memo.timeline.slice(0, uptoIndex + 1)) { if (step.type === "create") base.spice = step.spice ?? INITIAL_SPICE; else if (step.type === "ingredient-add" && step.ingredientId) base.ingredients.push(step.ingredientId); else if (step.type === "spice-set") base.spice = clamp(step.spice, 0, 100); else if (step.type === "serve") base.status = "eating"; else if (step.type === "eat") { if (step.ingredientId) { const idx = base.ingredients.indexOf(step.ingredientId); if (idx >= 0) base.ingredients.splice(idx, 1); } base.spice = clamp(step.spice, 0, 100); } else if (step.type === "stun-start") { base.status = "stun"; base.spice = 100; base.stunEndsAt = step.until || 0; } else if (step.type === "stun-end") base.status = "eating"; else if (step.type === "complete") base.status = "complete"; } return base; }
+    function deriveReceipt(memo) { const map = new Map(); for (const id of memo.ingredients) { const ing = getIngredient(id); const item = map.get(ing.id) || { label: ing.name, count: 0, total: 0 }; item.count += 1; item.total += ing.price; map.set(ing.id, item); } const lines = [...map.values()]; return { lines, total: lines.reduce((sum, line) => sum + line.total, 0) }; }
+    function timelineTitle(step) { return ({ create: "주문 생성", "ingredient-add": "재료 추가", "spice-set": "맵기 조절", serve: "조리 완료", eat: "한 입 먹기", "stun-start": "기절 시작", "stun-end": "기절 종료", complete: "완탕 완료" })[step.type] || "기록"; }
+    function timelineSubtitle(step) { return step.type === "create" ? "국물만 있는 빈 냄비에서 시작" : step.type === "ingredient-add" ? `${getIngredient(step.ingredientId).name} 추가` : step.type === "eat" ? (step.ingredientId ? `${getIngredient(step.ingredientId).name} 먹음` : `한 입 먹기 +${step.gain}`) : step.type === "serve" ? "마라탕이 조리됨" : step.type === "complete" ? "마라탕 종료" : "기록 단계"; }
+    function startReplay() { clearInterval(ui.detailTimer); const memo = getDetailMemo(); if (!memo) return; ui.detailIndex = 0; render(); ui.detailTimer = setInterval(() => { const current = getDetailMemo(); if (!current) return clearInterval(ui.detailTimer); if (ui.detailIndex < current.timeline.length - 1) { ui.detailIndex += 1; render(); return; } clearInterval(ui.detailTimer); }, 850); }
+    function startTickers() { if (ui.stunTicker) clearInterval(ui.stunTicker); ui.stunTicker = setInterval(() => { const memo = getActiveMemo(); if (memo && memo.status === "stun" && memo.stunEndsAt) { const remaining = memo.stunEndsAt - Date.now(); if (remaining <= 0) { memo.status = "eating"; memo.stunEndsAt = 0; memo.timeline.push({ type: "stun-end", at: Date.now(), note: "기절 종료" }); ui.mode = "eating"; ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; persist(); render(); } else { ui.mode = "stun"; ui.overlayText = `🔥 너무 맵다! ${Math.ceil(remaining/1000)}초 기절 중...`; ui.overlaySub = "맵기 100 상태입니다. 잠시만 기다리세요."; renderLight(); } } if (ui.overlayUntil && Date.now() >= ui.overlayUntil) { ui.overlayUntil = 0; ui.overlayText = ""; ui.overlaySub = ""; if (ui.mode === "complete") ui.mode = "detail"; render(); } }, 200); }
+    function stunRemaining(memo) { return memo?.stunEndsAt ? Math.max(0, Math.ceil((memo.stunEndsAt - Date.now()) / 1000)) : 0; }
+    function formatTime(ts) { const d = new Date(ts); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
+    function formatPrice(value) { return `${Number(value).toLocaleString("ko-KR")}원`; }
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+    function uid() { return window.crypto?.randomUUID ? crypto.randomUUID() : `memo-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`; }
+    function escapeHTML(value) { return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
+    function renderHistoryItem(memo) { return `<button class="memo-item ${memo.id === state.activeId ? 'active' : ''}" type="button" data-history-id="${memo.id}"><div class="memo-title-row"><div class="memo-title">${escapeHTML(memo.title)}</div><span class="pill">${statusLabel(memo.status)}</span></div><div class="memo-sub">재료 ${memo.ingredients.length}개 · 맵기 ${memo.spice} · ${formatTime(memo.updatedAt)}</div><div class="memo-meta">${memo.timeline.length}단계 기록됨</div></button>`; }
+    function renderHistory() { const memos = [...state.memos].sort((a,b) => b.updatedAt - a.updatedAt); els.historyList.innerHTML = memos.length ? memos.map(renderHistoryItem).join("") : '<div class="empty-note">아직 기록이 없어요.<br/>메모를 입력하면 여기 쌓입니다.</div>'; }
+    function renderPlayScene() { const memo = getActiveMemo(); if (!memo) return; const hint = ui.mode === "cooking" ? "재료를 끓이고, 맵기를 고르고, 오른쪽 영수증을 채우세요." : ui.mode === "eating" ? "이제 먹는 재미가 시작됩니다. 맵기 100에 가까워질수록 긴장감이 커집니다." : ui.mode === "stun" ? `맵기 100에 도달해 기절 중입니다. ${stunRemaining(memo)}초 뒤 복귀합니다.` : ""; els.scene.innerHTML = `<div class="scene-body"><div class="scene-header"><div><h2>${escapeHTML(memo.title)}</h2><p>${escapeHTML(hint)}</p></div><span class="pill">${labelForMode(ui.mode)}</span></div><div class="stage">${renderPotScene(memo, false)}${renderStageControls(memo)}</div></div>`; }
+  </script>
+</body>
+</html>

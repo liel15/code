@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>일정관리 나무 키우기 - Creative Preview</title>
+  <style>
+    :root {
+      --bg: #07130f;
+      --bg2: #0d1f16;
+      --panel: rgba(12, 25, 18, 0.76);
+      --panel2: rgba(17, 34, 25, 0.92);
+      --line: rgba(255,255,255,.08);
+      --text: #effaf2;
+      --muted: #a7c0b1;
+      --leaf: #53e29b;
+      --leaf2: #90f0c0;
+      --sun: #ffcb6b;
+      --soil: #7a5a3a;
+      --rose: #ff7d8f;
+      --sky: #85d8ff;
+      --shadow: 0 24px 70px rgba(0,0,0,.34);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(83,226,155,.20), transparent 20%),
+        radial-gradient(circle at 80% 10%, rgba(133,216,255,.16), transparent 18%),
+        radial-gradient(circle at 70% 78%, rgba(255,203,107,.10), transparent 16%),
+        linear-gradient(180deg, #05110c 0%, var(--bg) 100%);
+    }
+
+    body[data-view="today"] {
+      background:
+        radial-gradient(circle at 15% 12%, rgba(83,226,155,.20), transparent 20%),
+        radial-gradient(circle at 80% 10%, rgba(133,216,255,.16), transparent 18%),
+        linear-gradient(180deg, #05110c 0%, #07130f 100%);
+    }
+
+    body[data-view="schedule"] {
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,203,107,.16), transparent 18%),
+        radial-gradient(circle at 80% 16%, rgba(83,226,155,.12), transparent 20%),
+        linear-gradient(180deg, #0b130f 0%, #08120d 100%);
+    }
+
+    body[data-view="growth"] {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255,203,107,.22), transparent 18%),
+        radial-gradient(circle at 76% 16%, rgba(83,226,155,.14), transparent 20%),
+        linear-gradient(180deg, #0b140d 0%, #07100b 100%);
+    }
+
+    body[data-view="insight"] {
+      background:
+        radial-gradient(circle at 15% 12%, rgba(133,216,255,.18), transparent 18%),
+        radial-gradient(circle at 80% 14%, rgba(255,125,143,.12), transparent 16%),
+        linear-gradient(180deg, #081018 0%, #061016 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.3));
+    }
+
+    .wrap {
+      width: min(1220px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 44px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(9, 20, 15, 0.66);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #072014;
+      background: linear-gradient(135deg, var(--leaf), var(--leaf2));
+      box-shadow: 0 16px 30px rgba(83,226,155,.18);
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav button {
+      padding: 10px 14px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      transition: 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+    .nav button:hover,
+    .nav button.active {
+      color: var(--text);
+      background: rgba(83,226,155,.08);
+      border-color: rgba(83,226,155,.22);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(83,226,155,.08);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .view {
+      display: none;
+      margin-top: 18px;
+      animation: fade-in .24s ease;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .view[data-view="today"] .panel,
+    .view[data-view="today"] .card,
+    .view[data-view="today"] .panel-head,
+    .view[data-view="today"] .mini-card,
+    .view[data-view="today"] .task,
+    .view[data-view="today"] .note {
+      border-color: rgba(83,226,155,.12);
+    }
+
+    .view[data-view="schedule"] .panel,
+    .view[data-view="schedule"] .card,
+    .view[data-view="schedule"] .panel-head,
+    .view[data-view="schedule"] .mini-card,
+    .view[data-view="schedule"] .task,
+    .view[data-view="schedule"] .note {
+      border-color: rgba(255,203,107,.14);
+    }
+
+    .view[data-view="growth"] .panel,
+    .view[data-view="growth"] .card,
+    .view[data-view="growth"] .panel-head,
+    .view[data-view="growth"] .mini-card,
+    .view[data-view="growth"] .task,
+    .view[data-view="growth"] .note {
+      border-color: rgba(83,226,155,.14);
+    }
+
+    .view[data-view="insight"] .panel,
+    .view[data-view="insight"] .card,
+    .view[data-view="insight"] .panel-head,
+    .view[data-view="insight"] .mini-card,
+    .view[data-view="insight"] .task,
+    .view[data-view="insight"] .note {
+      border-color: rgba(133,216,255,.14);
+    }
+
+    .view-grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 34px;
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at 85% 12%, rgba(255,203,107,.16), transparent 22%),
+        radial-gradient(circle at 20% 0%, rgba(83,226,155,.14), transparent 20%),
+        linear-gradient(145deg, rgba(15, 31, 21, .96), rgba(8, 18, 12, .96));
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      margin-bottom: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(83,226,155,.22);
+      background: rgba(83,226,155,.08);
+      color: #b8ffd9;
+      font-size: .92rem;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 11ch;
+      font-size: clamp(2.5rem, 4.6vw, 5rem);
+      line-height: .95;
+      letter-spacing: -0.07em;
+    }
+
+    .lead {
+      max-width: 54ch;
+      margin: 18px 0 26px;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 1.02rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .btn {
+      min-height: 48px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 800;
+      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(0,0,0,.14); }
+    .primary {
+      color: #072014;
+      background: linear-gradient(135deg, var(--leaf), var(--leaf2));
+      box-shadow: 0 18px 40px rgba(83,226,155,.18);
+    }
+    .ghost {
+      color: var(--text);
+      border-color: var(--line);
+      background: rgba(255,255,255,.04);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .stat {
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .stat .label { color: var(--muted); font-size: .88rem; margin-bottom: 8px; }
+    .stat .value { font-size: 1.85rem; font-weight: 900; letter-spacing: -.04em; }
+    .stat .hint { margin-top: 6px; color: var(--muted); font-size: .86rem; }
+
+    .tree-shell {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100%;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,203,107,.18), transparent 18%),
+        linear-gradient(180deg, rgba(14,28,20,.95), rgba(8,16,12,.98));
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-head h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.04em; }
+    .panel-head p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .tree-stage {
+      position: relative;
+      min-height: 380px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(133,216,255,.14), transparent 22%),
+        radial-gradient(circle at 50% 100%, rgba(83,226,155,.10), transparent 22%),
+        linear-gradient(180deg, rgba(11,23,16,.92), rgba(8,16,12,.92));
+      overflow: hidden;
+    }
+
+    .tree-stage::before,
+    .tree-stage::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .tree-stage::before {
+      left: 10%;
+      bottom: 12%;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(83,226,155,.12), transparent 66%);
+      animation: pulseGlow 5.8s ease-in-out infinite;
+    }
+
+    .tree-stage::after {
+      right: 8%;
+      top: 12%;
+      width: 88px;
+      height: 88px;
+      background: radial-gradient(circle, rgba(255,203,107,.18), transparent 68%);
+      animation: pulseGlow 6.2s ease-in-out infinite .8s;
+    }
+
+    .sun {
+      position: absolute;
+      right: 22px;
+      top: 22px;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff7d4, var(--sun));
+      box-shadow: 0 0 50px rgba(255,203,107,.18);
+      opacity: .95;
+      animation: pulseGlow 6s ease-in-out infinite;
+    }
+
+    .hill {
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      bottom: -2px;
+      height: 34%;
+      background: linear-gradient(180deg, rgba(37,72,45,.18), rgba(58,100,62,.55));
+      clip-path: ellipse(54% 44% at 50% 100%);
+    }
+
+    .tree {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 1;
+    }
+
+    .tree .trunk {
+      width: 56px;
+      height: 176px;
+      border-radius: 30px 30px 18px 18px;
+      background: linear-gradient(180deg, #8c6342, #5d402a 75%);
+      position: relative;
+      box-shadow: inset 0 -10px 0 rgba(0,0,0,.08);
+      transform: translateY(58px);
+      animation: sway 6.5s ease-in-out infinite;
+    }
+
+    .tree .trunk::before,
+    .tree .trunk::after {
+      content: '';
+      position: absolute;
+      background: linear-gradient(180deg, #8c6342, #5d402a);
+      border-radius: 999px;
+      transform-origin: bottom center;
+    }
+    .tree .trunk::before {
+      width: 20px;
+      height: 96px;
+      left: -18px;
+      top: 34px;
+      transform: rotate(-36deg);
+    }
+    .tree .trunk::after {
+      width: 20px;
+      height: 108px;
+      right: -18px;
+      top: 28px;
+      transform: rotate(34deg);
+    }
+
+    .crown {
+      position: absolute;
+      top: 64px;
+      width: 320px;
+      height: 250px;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d9ffe9, var(--leaf));
+      box-shadow: 0 18px 40px rgba(83,226,155,.14), inset 0 -10px 18px rgba(10,40,22,.16);
+    }
+    .orb.one { width: 126px; height: 126px; left: 92px; top: 52px; animation: floaty 7s ease-in-out infinite; }
+    .orb.two { width: 160px; height: 160px; left: 0; top: 56px; animation: floaty 8s ease-in-out infinite .4s; }
+    .orb.three { width: 152px; height: 152px; right: 0; top: 42px; animation: floaty 7.5s ease-in-out infinite .8s; }
+    .orb.four { width: 110px; height: 110px; left: 108px; top: 0; background: radial-gradient(circle at 35% 35%, #f4fff8, var(--leaf2)); animation: floaty 6.8s ease-in-out infinite .2s; }
+
+    .leaf-float {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50% 0 50% 50%;
+      background: linear-gradient(135deg, var(--leaf2), var(--leaf));
+      opacity: .9;
+      filter: blur(.2px);
+      animation: drift 6s ease-in-out infinite;
+    }
+    .leaf-float.l1 { left: 20%; top: 28%; animation-delay: .2s; }
+    .leaf-float.l2 { left: 70%; top: 24%; animation-delay: 1.2s; }
+    .leaf-float.l3 { left: 62%; top: 62%; animation-delay: 2s; }
+    .leaf-float.l4 { left: 28%; top: 60%; animation-delay: 1.5s; }
+
+    .soil {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      width: 240px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.08), rgba(122,90,58,.55) 55%, rgba(52,34,18,.8) 100%);
+      filter: blur(.2px);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: .86rem;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    .mini-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-title h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.04em; }
+    .section-title p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .task-list {
+      display: grid;
+      gap: 12px;
+    }
+    .task {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      transition: 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+    .task:hover { transform: translateY(-2px); border-color: rgba(83,226,155,.22); box-shadow: 0 14px 30px rgba(0,0,0,.12); }
+    .task .dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--leaf), var(--leaf2));
+      box-shadow: 0 0 0 6px rgba(83,226,155,.12);
+    }
+    .task h3 { margin: 0 0 4px; font-size: 1rem; }
+    .task .meta { color: var(--muted); font-size: .88rem; line-height: 1.5; }
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-weight: 800;
+      background: rgba(83,226,155,.1);
+      color: #a8ffd0;
+      border: 1px solid rgba(83,226,155,.16);
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 14px;
+    }
+    .meter {
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .meter .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+    }
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--leaf), var(--sky));
+    }
+
+    .notes {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .note {
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .note strong { display: block; margin-bottom: 6px; }
+    .note span { color: var(--muted); font-size: .9rem; line-height: 1.55; }
+
+    @keyframes drift {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(12deg); }
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes sway {
+      0%, 100% { transform: translateY(58px) rotate(0deg); }
+      50% { transform: translateY(56px) rotate(-1.4deg); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: .9; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1080px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .wrap { width: min(100% - 18px, 1220px); }
+      .topbar { border-radius: 24px; flex-direction: column; align-items: flex-start; }
+      .stats { grid-template-columns: 1fr; }
+      .task { grid-template-columns: auto 1fr; }
+      .pill { grid-column: 1 / -1; justify-self: start; }
+      .section-title, .panel-head { align-items: flex-start; flex-direction: column; }
+      .tree-stage { min-height: 340px; }
+      .crown { transform: scale(.9); transform-origin: center top; }
+      .view-grid { grid-template-columns: 1fr; }
+      .mini-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">🌿</div>
+        <div>
+          일정관리 나무 키우기
+          <div style="color: var(--muted); font-size: .86rem; margin-top: 3px; font-weight: 500;">자유롭고 감성적인 성장형 일정 보드</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button type="button" class="active" data-tab="today">오늘</button>
+        <button type="button" data-tab="schedule">일정</button>
+        <button type="button" data-tab="growth">성장</button>
+        <button type="button" data-tab="insight">인사이트</button>
+      </nav>
+    </header>
+
+    <section class="view active" data-view="today">
+      <section class="hero">
+        <div class="panel hero-main">
+          <div class="eyebrow">🌱 오늘 · 자유로운 분위기와 리듬</div>
+          <h1>할 일을 심고, 나무로 자라나는 일정관리</h1>
+          <p class="lead">
+            딱딱한 체크리스트 대신, 하루의 태스크가 잎과 가지가 되어 성장하는 화면입니다.
+            계획은 가볍게 정리하고, 진행은 시각적으로 느껴지도록 구성했습니다.
+          </p>
+
+          <div class="actions">
+            <a class="btn primary" href="#">새 일정 심기</a>
+            <a class="btn ghost" href="#">빠른 메모</a>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="label">오늘의 일정</div>
+              <div class="value">8개</div>
+              <div class="hint">가벼운 리듬으로 배치</div>
+            </div>
+            <div class="stat">
+              <div class="label">성장 단계</div>
+              <div class="value">78%</div>
+              <div class="hint">잎이 무성해지는 중</div>
+            </div>
+            <div class="stat">
+              <div class="label">집중 시간</div>
+              <div class="value">4h 20m</div>
+              <div class="hint">깊은 작업 블록 유지</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel tree-shell">
+          <div class="panel-head">
+            <div>
+              <h2>오늘의 나무</h2>
+              <p>완료된 일정이 가지를 키웁니다</p>
+            </div>
+            <span class="pill">활력 +12</span>
+          </div>
+
+          <div class="tree-stage">
+            <div class="sun"></div>
+            <div class="tree">
+              <div class="crown">
+                <div class="orb one"></div>
+                <div class="orb two"></div>
+                <div class="orb three"></div>
+                <div class="orb four"></div>
+                <div class="leaf-float l1"></div>
+                <div class="leaf-float l2"></div>
+                <div class="leaf-float l3"></div>
+                <div class="leaf-float l4"></div>
+              </div>
+              <div class="trunk"></div>
+              <div class="soil"></div>
+              <div class="hill"></div>
+            </div>
+          </div>
+
+          <div class="badge-row">
+            <span class="badge">물주기: 오전 1회</span>
+            <span class="badge">햇빛: 집중 블록</span>
+            <span class="badge">비료: 완료 체크</span>
+          </div>
+        </aside>
+      </section>
+    </section>
+
+    <section class="view" data-view="schedule">
+      <div class="view-grid">
+        <article class="card">
+          <div class="panel-head">
+            <div>
+              <h2>오늘 심을 일정</h2>
+              <p>시간 대신 흐름 중심으로 정리</p>
+            </div>
+            <span class="pill">3개 우선</span>
+          </div>
+
+          <div class="task-list">
+            <div class="task">
+              <div class="dot"></div>
+              <div>
+                <h3>프로젝트 문구 다듬기</h3>
+                <div class="meta">10:00 · 짧은 집중 세션 · 톤 정리와 카피 수정</div>
+              </div>
+              <div class="pill">새싹</div>
+            </div>
+            <div class="task">
+              <div class="dot"></div>
+              <div>
+                <h3>회의 노트 정리</h3>
+                <div class="meta">13:30 · 중간 난이도 · 핵심 액션 항목 분리</div>
+              </div>
+              <div class="pill">잎</div>
+            </div>
+            <div class="task">
+              <div class="dot"></div>
+              <div>
+                <h3>저녁 운동 루틴</h3>
+                <div class="meta">18:20 · 회복 일정 · 휴식과 리듬 관리</div>
+              </div>
+              <div class="pill">꽃</div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="card">
+          <div class="panel-head">
+            <div>
+              <h2>배치 감각</h2>
+              <p>하루의 리듬을 시각화</p>
+            </div>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-card"><strong>오전</strong><span>가벼운 편집과 준비 작업을 중심으로 잔가지처럼 펼칩니다.</span></div>
+            <div class="mini-card"><strong>오후</strong><span>핵심 업무를 묶어 중간 굵기의 줄기로 이어줍니다.</span></div>
+            <div class="mini-card"><strong>저녁</strong><span>회복과 루틴 정리로 잔잔한 하이라이트를 남깁니다.</span></div>
+            <div class="mini-card"><strong>유연성</strong><span>정해진 칸보다 흐름에 따라 자유롭게 이동할 수 있습니다.</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" data-view="growth">
+      <div class="view-grid">
+        <aside class="panel tree-shell">
+          <div class="panel-head">
+            <div>
+              <h2>성장하는 나무</h2>
+              <p>완료할수록 형태가 풍성해짐</p>
+            </div>
+            <span class="pill">성장 +78</span>
+          </div>
+          <div class="tree-stage">
+            <div class="sun"></div>
+            <div class="tree">
+              <div class="crown">
+                <div class="orb one"></div>
+                <div class="orb two"></div>
+                <div class="orb three"></div>
+                <div class="orb four"></div>
+                <div class="leaf-float l1"></div>
+                <div class="leaf-float l2"></div>
+                <div class="leaf-float l3"></div>
+                <div class="leaf-float l4"></div>
+              </div>
+              <div class="trunk"></div>
+              <div class="soil"></div>
+              <div class="hill"></div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <span class="badge">새 잎 12장</span>
+            <span class="badge">가지 4개 확장</span>
+            <span class="badge">꽃 2개 개화</span>
+          </div>
+        </aside>
+
+        <article class="card">
+          <div class="panel-head">
+            <div>
+              <h2>성장 지표</h2>
+              <p>작업이 나무에 남기는 흔적</p>
+            </div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="meter">
+              <div class="row"><span>집중 루트</span><strong>82%</strong></div>
+              <div class="bar"><span style="width: 82%"></span></div>
+            </div>
+            <div class="meter">
+              <div class="row"><span>완료 가지</span><strong>64%</strong></div>
+              <div class="bar"><span style="width: 64%"></span></div>
+            </div>
+            <div class="meter">
+              <div class="row"><span>회복 햇빛</span><strong>91%</strong></div>
+              <div class="bar"><span style="width: 91%"></span></div>
+            </div>
+          </div>
+
+          <div class="notes">
+            <div class="note">
+              <strong>자라나는 방식</strong>
+              <span>완료된 일정이 잎과 가지로 시각화되어, 오늘의 성취를 감각적으로 느낄 수 있습니다.</span>
+            </div>
+            <div class="note">
+              <strong>리듬의 보상</strong>
+              <span>작은 완료도 화면의 밀도와 색감에 반영되어, 다음 행동으로 자연스럽게 이어집니다.</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" data-view="insight">
+      <div class="view-grid">
+        <article class="card">
+          <div class="panel-head">
+            <div>
+              <h2>인사이트</h2>
+              <p>일정의 패턴을 읽는 공간</p>
+            </div>
+          </div>
+
+          <div class="progress-wrap">
+            <div class="meter">
+              <div class="row"><span>집중 루트</span><strong>82%</strong></div>
+              <div class="bar"><span style="width: 82%"></span></div>
+            </div>
+            <div class="meter">
+              <div class="row"><span>완료 가지</span><strong>64%</strong></div>
+              <div class="bar"><span style="width: 64%"></span></div>
+            </div>
+            <div class="meter">
+              <div class="row"><span>회복 햇빛</span><strong>91%</strong></div>
+              <div class="bar"><span style="width: 91%"></span></div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="card">
+          <div class="panel-head">
+            <div>
+              <h2>오늘의 메모</h2>
+              <p>가볍지만 의미 있는 피드백</p>
+            </div>
+          </div>
+
+          <div class="notes">
+            <div class="note">
+              <strong>자유로운 배치</strong>
+              <span>시간표보다 분위기를 먼저 읽는 레이아웃으로, 오늘의 우선순위를 시각적으로 느끼게 합니다.</span>
+            </div>
+            <div class="note">
+              <strong>성장 피드백</strong>
+              <span>완료된 일정은 단순히 체크되지 않고, 나무의 형태와 색감 변화로 즉시 피드백됩니다.</span>
+            </div>
+            <div class="note">
+              <strong>다음 추천</strong>
+              <span>집중 루트가 높은 시간대에 가장 무거운 작업을 배치하면 더 자연스럽게 자라납니다.</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tabs = document.querySelectorAll('[data-tab]');
+    const views = document.querySelectorAll('[data-view]');
+    const setTheme = (name) => document.body.setAttribute('data-view', name);
+
+    function setView(name) {
+      tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
+      views.forEach((view) => view.classList.toggle('active', view.dataset.view === name));
+      setTheme(name);
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => setView(tab.dataset.tab));
+    });
+
+    setTheme('today');
+  </script>
+</body>
+</html>

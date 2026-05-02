@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="50mm" height="50mm" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0C6BFF"/>
+      <stop offset="100%" stop-color="#19A7FF"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="100" cy="100" r="98" fill="#FFFFFF"/>
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#DCE9FF" stroke-width="1.5"/>
+  <circle cx="100" cy="100" r="84" fill="#F9FCFF"/>
+
+  <g transform="translate(100 92)">
+    <ellipse cx="0" cy="10" rx="32" ry="41" fill="#5EA9D4" stroke="#111111" stroke-width="4"/>
+    <circle cx="0" cy="-28" r="38" fill="#5EA9D4" stroke="#111111" stroke-width="4"/>
+
+    <path d="M -12 -60 C -13 -74, -4 -82, 6 -81 C 15 -80, 19 -70, 17 -60" fill="#5EA9D4" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 7 -57 C 10 -66, 17 -72, 24 -69 C 30 -66, 28 -56, 20 -51" fill="#5EA9D4" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+
+    <circle cx="-14" cy="-27" r="3.4" fill="#111111"/>
+    <circle cx="14" cy="-27" r="3.4" fill="#111111"/>
+    <path d="M -24 -38 C -20 -42, -15 -42, -11 -39" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 11 -39 C 15 -42, 20 -42, 24 -38" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+
+    <path d="M -7 -18 C -5 -28, 5 -28, 7 -18 C 8 -10, 2 -7, 0 -7 C -2 -7, -8 -10, -7 -18 Z" fill="none" stroke="#111111" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M -16 -8 C -10 -2, -4 0, 0 0 C 4 0, 10 -2, 16 -8" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+
+    <path d="M -7 16 C -11 11, -16 10, -19 15 C -24 22, -24 36, -18 47" fill="#5EA9D4" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 7 16 C 11 11, 16 10, 19 15 C 24 22, 24 36, 18 47" fill="#5EA9D4" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M -33 7 C -44 18, -48 36, -45 52" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 33 7 C 44 18, 48 36, 45 52" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M -35 28 C -37 51, -35 65, -31 75" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 35 28 C 37 51, 35 65, 31 75" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M -42 44 C -58 43, -61 44, -65 44" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M -42 53 C -57 54, -60 56, -65 57" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 42 44 C 58 43, 61 44, 65 44" fill="none" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+
+    <path d="M -17 79 C -17 87, -10 89, -6 89 L -3 89 L -3 76" fill="#5EA9D4" stroke="#111111" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 17 79 C 17 87, 10 89, 6 89 L 3 89 L 3 76" fill="#5EA9D4" stroke="#111111" stroke-width="3.5" stroke-linejoin="round"/>
+
+    <path d="M 0 25 C 7 26, 11 31, 11 37 C 11 43, 7 48, 0 50 C -7 48, -11 43, -11 37 C -11 31, -7 26, 0 25 Z" fill="#F6F6F6" stroke="#111111" stroke-width="4"/>
+    <text x="0" y="46" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="#111111">W</text>
+
+    <path d="M 38 61 C 48 62, 53 67, 54 74 C 55 81, 50 86, 42 87" fill="#5EA9D4" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 41 86 C 47 90, 54 93, 58 97" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <text x="100" y="158" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#0B2F63">Thank you</text>
+</svg>

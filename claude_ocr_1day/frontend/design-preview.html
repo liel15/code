@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>영수증 지출관리 스튜디오</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-2: #0c1729;
+      --panel: rgba(14, 24, 43, 0.78);
+      --panel-2: rgba(19, 32, 57, 0.92);
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #edf4ff;
+      --muted: #95a6c8;
+      --cyan: #53d7ff;
+      --violet: #8d7bff;
+      --mint: #34d399;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(83, 215, 255, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(141, 123, 255, 0.18), transparent 24%),
+        radial-gradient(circle at 20% 80%, rgba(52, 211, 153, 0.12), transparent 20%),
+        linear-gradient(180deg, #050b14 0%, var(--bg) 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.12;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.95), rgba(0,0,0,.35));
+    }
+
+    .wrap {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(10, 18, 31, 0.65);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: #06111d;
+      box-shadow: 0 12px 30px rgba(83, 215, 255, 0.22);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      border: 1px solid transparent;
+      transition: 180ms ease;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      color: var(--text);
+      border-color: rgba(83, 215, 255, 0.24);
+      background: rgba(83, 215, 255, 0.08);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 18px;
+      margin-top: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 80% 10%, rgba(83, 215, 255, 0.2), transparent 24%),
+        radial-gradient(circle at 20% 0%, rgba(141, 123, 255, 0.18), transparent 24%),
+        linear-gradient(145deg, rgba(15, 29, 51, 0.96), rgba(10, 18, 32, 0.94));
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(83, 215, 255, 0.2);
+      color: #9feaff;
+      background: rgba(83, 215, 255, 0.08);
+      font-size: 0.92rem;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 4vw, 4.6rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+      max-width: 10ch;
+    }
+
+    .lead {
+      max-width: 56ch;
+      margin: 18px 0 24px;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.75;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-primary {
+      color: #06111d;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      box-shadow: 0 18px 40px rgba(83, 215, 255, 0.18);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      border-color: var(--line);
+      background: rgba(255,255,255,.04);
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .glass-card {
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .stat .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .stat .hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.04em;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .upload {
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      border: 1px dashed rgba(83, 215, 255, 0.28);
+      background:
+        linear-gradient(180deg, rgba(83, 215, 255, 0.08), rgba(141, 123, 255, 0.04)),
+        rgba(255,255,255,.03);
+    }
+
+    .upload-box {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      text-align: center;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(6, 14, 25, 0.5);
+      padding: 24px;
+    }
+
+    .upload-icon {
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      font-size: 2rem;
+      margin-bottom: 14px;
+      color: #06111d;
+      background: linear-gradient(135deg, var(--cyan), var(--mint));
+      box-shadow: 0 18px 40px rgba(52, 211, 153, 0.18);
+    }
+
+    .upload h3 {
+      margin: 0 0 10px;
+      font-size: 1.3rem;
+      letter-spacing: -0.04em;
+    }
+
+    .upload p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+      justify-content: center;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .receipt {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .receipt:hover {
+      transform: translateY(-1px);
+      border-color: rgba(83, 215, 255, 0.22);
+      background: rgba(25, 38, 68, 0.96);
+    }
+
+    .receipt-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(83,215,255,.18), rgba(141,123,255,.18));
+      font-size: 1.4rem;
+    }
+
+    .receipt h4 {
+      margin: 0 0 4px;
+      letter-spacing: -0.03em;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .price {
+      text-align: right;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .price small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .forecast {
+      display: grid;
+      gap: 12px;
+    }
+
+    .forecast-item {
+      display: grid;
+      gap: 8px;
+    }
+
+    .forecast-item .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .day.active {
+      color: #06111d;
+      background: linear-gradient(135deg, var(--cyan), var(--mint));
+      font-weight: 800;
+    }
+
+    .summary {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+
+    .summary-row strong { letter-spacing: -0.03em; }
+
+    .summary-row span { color: var(--muted); font-size: 0.92rem; }
+
+    @media (max-width: 1024px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .wrap { width: min(100% - 20px, 1200px); }
+      .topbar {
+        border-radius: 24px;
+        padding: 16px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .stats { grid-template-columns: 1fr; }
+      .receipt { grid-template-columns: auto 1fr; }
+      .price { grid-column: 1 / -1; text-align: left; }
+      .section-title { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">◉</div>
+        <div>
+          영수증 지출관리
+          <div style="color: var(--muted); font-size: 0.86rem; font-weight: 500; margin-top: 3px;">OCR 기반 감성형 지출 대시보드</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="#overview" class="active">개요</a>
+        <a href="#upload">업로드</a>
+        <a href="#history">내역</a>
+        <a href="#insight">인사이트</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="overview">
+      <div class="panel hero-main">
+        <div class="eyebrow">✨ 창의적 리디자인 · 더 선명한 계층과 분위기</div>
+        <h1>지출을 한눈에 읽히게 만드는 프리미엄 대시보드</h1>
+        <p class="lead">
+          영수증 업로드, OCR 파싱, 카테고리 집계가 하나의 흐름으로 이어지도록 구성한 시안입니다.
+          딱딱한 관리 화면 대신, 정보가 더 선명하게 보이는 시각적 리듬을 만들었습니다.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#upload">영수증 업로드</a>
+          <a class="btn btn-secondary" href="#history">지출 내역 보기</a>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">이번 달 지출</div>
+            <div class="value">₩1,284,000</div>
+            <div class="hint">전월 대비 +12.4%</div>
+          </div>
+          <div class="stat">
+            <div class="label">OCR 처리</div>
+            <div class="value">98.2%</div>
+            <div class="hint">추출 성공률 안정화</div>
+          </div>
+          <div class="stat">
+            <div class="label">이번 주 등록</div>
+            <div class="value">42건</div>
+            <div class="hint">업로드 흐름이 매끄럽게 유지됨</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-side">
+        <div class="glass-card">
+          <div class="section-title">
+            <div>
+              <h2>오늘의 감각</h2>
+              <p>시각적 포인트와 상태 요약</p>
+            </div>
+          </div>
+          <div class="summary">
+            <div class="summary-row"><strong>가장 큰 지출</strong><span>백화점 · ₩184,000</span></div>
+            <div class="summary-row"><strong>최다 카테고리</strong><span>식사 · 18건</span></div>
+            <div class="summary-row"><strong>누락된 항목</strong><span>0건</span></div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="section-title">
+            <div>
+              <h2>이번 주 캘린더</h2>
+              <p>지출이 몰린 날짜를 시각화</p>
+            </div>
+          </div>
+          <div class="calendar" aria-label="calendar preview">
+            <div class="day">1</div><div class="day">2</div><div class="day">3</div><div class="day active">4</div><div class="day">5</div><div class="day">6</div><div class="day">7</div>
+            <div class="day">8</div><div class="day">9</div><div class="day">10</div><div class="day">11</div><div class="day">12</div><div class="day">13</div><div class="day">14</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="upload panel" id="upload">
+        <div class="section-title">
+          <div>
+            <h2>업로드 존</h2>
+            <p>업로드 중심의 강한 첫인상</p>
+          </div>
+          <span style="color: #9feaff; font-weight: 700;">Drag & Drop</span>
+        </div>
+        <div class="upload-box">
+          <div>
+            <div class="upload-icon">⬆</div>
+            <h3>영수증, PDF, 이미지 파일을 올려보세요</h3>
+            <p>
+              OCR이 문서에서 상호명, 날짜, 합계, 카테고리 정보를 추출합니다.
+              결과는 즉시 카드와 통계로 연결됩니다.
+            </p>
+            <div class="chips">
+              <span class="chip">JPG</span>
+              <span class="chip">PNG</span>
+              <span class="chip">PDF</span>
+              <span class="chip">최대 10MB</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="side-stack" id="insight">
+        <div class="glass-card">
+          <div class="section-title">
+            <div>
+              <h2>카테고리 분포</h2>
+              <p>시각적 대비를 강조</p>
+            </div>
+          </div>
+          <div class="forecast">
+            <div class="forecast-item">
+              <div class="row"><span>식사</span><strong>38%</strong></div>
+              <div class="bar"><span style="width: 38%"></span></div>
+            </div>
+            <div class="forecast-item">
+              <div class="row"><span>교통</span><strong>22%</strong></div>
+              <div class="bar"><span style="width: 22%"></span></div>
+            </div>
+            <div class="forecast-item">
+              <div class="row"><span>쇼핑</span><strong>26%</strong></div>
+              <div class="bar"><span style="width: 26%"></span></div>
+            </div>
+            <div class="forecast-item">
+              <div class="row"><span>기타</span><strong>14%</strong></div>
+              <div class="bar"><span style="width: 14%"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="section-title">
+            <div>
+              <h2>상태 카드</h2>
+              <p>핵심 지표를 짧게 정리</p>
+            </div>
+          </div>
+          <div class="summary">
+            <div class="summary-row"><strong>파싱 대기</strong><span>3건</span></div>
+            <div class="summary-row"><strong>검토 필요</strong><span>1건</span></div>
+            <div class="summary-row"><strong>정상 저장</strong><span>214건</span></div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="glass-card" id="history" style="margin-top: 18px;">
+      <div class="section-title">
+        <div>
+          <h2>최근 내역</h2>
+          <p>카드형 리스트로 밀도와 리듬을 조절</p>
+        </div>
+        <a href="#overview" style="color: #9feaff; font-weight: 700;">상단으로</a>
+      </div>
+
+      <div class="timeline">
+        <div class="receipt">
+          <div class="receipt-icon">☕</div>
+          <div>
+            <h4>스타벅스 강남점</h4>
+            <div class="meta">2026.05.02 · 간식 · 카드 결제 · OCR 완료</div>
+          </div>
+          <div class="price">₩18,500<small>검토 필요 없음</small></div>
+        </div>
+        <div class="receipt">
+          <div class="receipt-icon">🛍</div>
+          <div>
+            <h4>유니클로</h4>
+            <div class="meta">2026.05.01 · 쇼핑 · 카드 결제 · 항목 4개 추출</div>
+          </div>
+          <div class="price">₩79,000<small>정상 분류</small></div>
+        </div>
+        <div class="receipt">
+          <div class="receipt-icon">🚕</div>
+          <div>
+            <h4>택시 이용 내역</h4>
+            <div class="meta">2026.04.30 · 교통 · 현금 · 메모 포함</div>
+          </div>
+          <div class="price">₩12,800<small>메모 확인</small></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

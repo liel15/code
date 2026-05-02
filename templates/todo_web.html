@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TODO Nebula</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07130f;
+      --panel: rgba(12, 25, 18, 0.78);
+      --panel-2: rgba(17, 34, 25, 0.92);
+      --text: #effaf2;
+      --muted: #a7c0b1;
+      --line: rgba(255,255,255,0.08);
+      --cyan: #53e29b;
+      --violet: #85d8ff;
+      --green: #30d18a;
+      --yellow: #ffcb6b;
+      --red: #ff7d8f;
+    }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(83,226,155,.20), transparent 20%),
+        radial-gradient(circle at 80% 10%, rgba(133,216,255,.16), transparent 18%),
+        radial-gradient(circle at 70% 78%, rgba(255,203,107,.10), transparent 16%),
+        linear-gradient(180deg, #05110c 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .shell {
+      max-width: 1220px;
+    }
+    .hero {
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 80% 12%, rgba(255,203,107,.16), transparent 22%),
+        radial-gradient(circle at 20% 0%, rgba(83,226,155,.14), transparent 20%),
+        linear-gradient(145deg, rgba(15, 31, 21, .96), rgba(8, 18, 12, .96));
+      backdrop-filter: blur(18px);
+      border-radius: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+    .dashboard-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      padding: .35rem;
+      border: 1px solid var(--line);
+      background: rgba(9, 20, 15, 0.66);
+      border-radius: 24px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 70px rgba(0,0,0,.18);
+    }
+    .dashboard-tabs .tab-btn {
+      border: 1px solid transparent;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      border-radius: 16px;
+      padding: .7rem 1rem;
+      font-weight: 800;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+    .dashboard-tabs .tab-btn:hover,
+    .dashboard-tabs .tab-btn.active {
+      transform: translateY(-1px);
+      background: rgba(83,226,155,.09);
+      color: var(--text);
+      border-color: rgba(83,226,155,.22);
+    }
+    .view-frame {
+      display: none;
+      animation: fadeIn .24s ease;
+    }
+    .view-frame.active {
+      display: block;
+    }
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .insight-card {
+      padding: 1rem;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .insight-card .kpi {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -.05em;
+      line-height: 1;
+    }
+    .glass {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.34);
+    }
+    .metric {
+      padding: 1rem 1.1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+    }
+    .metric .value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .progress {
+      height: 12px;
+      background: rgba(255,255,255,.06);
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+    }
+    .form-control, .form-select {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+    .form-control:focus, .form-select:focus {
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 .2rem rgba(70,215,255,.12);
+    }
+    .btn-neon {
+      border: 0;
+      color: #072014;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--cyan), #90f0c0);
+      box-shadow: 0 18px 40px rgba(83,226,155,.18);
+      border-radius: 18px;
+    }
+    .btn-soft {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,.045);
+      border-radius: 18px;
+    }
+    .btn-soft.active {
+      background: rgba(83,226,155,.12);
+      border-color: rgba(83,226,155,.32);
+      color: var(--text);
+    }
+    .todo-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: 24px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .todo-row.completed {
+      opacity: .72;
+    }
+    .todo-title.completed {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .note-box {
+      margin-top: .75rem;
+      padding: .75rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius: 20px;
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .note-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(70,215,255,.08), rgba(143,107,255,.06));
+      opacity: 0;
+      transition: opacity .22s ease;
+      pointer-events: none;
+    }
+    .note-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .5rem;
+    }
+    .note-view {
+      position: relative;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      max-height: 7.5em;
+      overflow: hidden;
+      transition: max-height .28s ease, opacity .18s ease, transform .18s ease;
+      opacity: .96;
+    }
+    .note-view.expanded {
+      max-height: none;
+    }
+    .note-editor {
+      display: none;
+      min-height: 120px;
+      resize: vertical;
+      border: 1px solid rgba(70,215,255,.34);
+      background: rgba(8,11,22,.72);
+      box-shadow: inset 0 0 0 1px rgba(143,107,255,.08), 0 0 0 0 rgba(70,215,255,0);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease, background .2s ease;
+    }
+    .note-editor:focus {
+      border-color: rgba(70,215,255,.7);
+      box-shadow: 0 0 0 .2rem rgba(70,215,255,.12), inset 0 0 0 1px rgba(143,107,255,.1);
+      background: rgba(8,11,22,.86);
+    }
+    .note-box.editing .note-view {
+      display: none;
+    }
+    .note-box.editing .note-editor {
+      display: block;
+      animation: note-pop .24s ease;
+    }
+    .note-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: .35rem;
+      margin-top: .6rem;
+    }
+    .note-toggle {
+      border: 0;
+      background: transparent;
+      color: var(--cyan);
+      padding: 0;
+      font-size: .85rem;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    .note-toggle.d-none {
+      display: none;
+    }
+    .note-box.editing {
+      border-color: rgba(70,215,255,.42);
+      background: linear-gradient(180deg, rgba(70,215,255,.08), rgba(143,107,255,.05));
+      box-shadow: 0 14px 36px rgba(0,0,0,.24), 0 0 0 1px rgba(70,215,255,.08);
+      transform: translateY(-1px);
+    }
+    .note-box.editing::before {
+      opacity: 1;
+    }
+    .note-box:not(.editing):hover {
+      transform: translateY(-2px);
+      border-color: rgba(83,226,155,.22);
+      box-shadow: 0 16px 42px rgba(0,0,0,.24);
+    }
+    .note-empty {
+      opacity: .7;
+      font-style: italic;
+    }
+    @keyframes note-pop {
+      0% { opacity: 0; transform: translateY(8px) scale(.985); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes note-glow {
+      0%, 100% { box-shadow: 0 0 0 rgba(70,215,255,0); }
+      50% { box-shadow: 0 0 24px rgba(70,215,255,.10); }
+    }
+    .note-box.editing .note-actions .btn {
+      animation: note-glow 1.6s ease-in-out infinite;
+    }
+    .badge-priority {
+      border-radius: 999px;
+      padding: .35rem .65rem;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .p-high { background: rgba(255,125,143,.14); color: var(--red); }
+    .p-medium { background: rgba(255,203,107,.14); color: var(--yellow); }
+    .p-low { background: rgba(48,209,138,.14); color: var(--green); }
+    .due-danger { color: var(--red); }
+    .due-warning { color: var(--yellow); }
+    .due-info { color: #9ddcff; }
+    .due-muted { color: var(--muted); }
+    .due-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .65rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      font-size: .8rem;
+    }
+    .tree-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .65rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      font-size: .8rem;
+    }
+    .tree-chip.success { color: var(--green); }
+    .tree-chip.warning { color: var(--yellow); }
+    .tree-chip.danger { color: var(--red); }
+    .tree-chip.info { color: #9ddcff; }
+    .tree-scene {
+      position: relative;
+      min-height: 260px;
+      padding: 1rem;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(133,216,255,.16), transparent 32%),
+        linear-gradient(180deg, rgba(11,23,16,.95), rgba(8,16,12,.95));
+      overflow: hidden;
+    }
+    .tree-scene::after {
+      content: '';
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      bottom: -8px;
+      height: 36%;
+      background: linear-gradient(180deg, rgba(83,226,155,.12), rgba(83,226,155,.28));
+      clip-path: ellipse(50% 42% at 50% 100%);
+      pointer-events: none;
+    }
+    .tree-avatar {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      min-height: 130px;
+      font-size: 4rem;
+      filter: drop-shadow(0 14px 24px rgba(0,0,0,.32));
+    }
+    .tree-avatar.dead {
+      filter: grayscale(1) drop-shadow(0 14px 24px rgba(0,0,0,.38));
+    }
+    .tree-grave {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 1;
+      font-size: 2.1rem;
+      opacity: .9;
+    }
+    .tree-message {
+      min-height: 58px;
+      padding: .75rem 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(8,11,22,.72);
+      position: relative;
+      z-index: 1;
+    }
+    .tree-message::before {
+      content: '';
+      position: absolute;
+      left: 28px;
+      top: -8px;
+      width: 16px;
+      height: 16px;
+      background: rgba(8,11,22,.72);
+      border-left: 1px solid rgba(255,255,255,.12);
+      border-top: 1px solid rgba(255,255,255,.12);
+      transform: rotate(45deg);
+    }
+    .tree-action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .tree-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .5rem;
+    }
+    .tree-stat {
+      padding: .7rem .8rem;
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      font-size: .9rem;
+    }
+    .empty {
+      padding: 3rem 1rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+    .topbar {
+      color: var(--muted);
+    }
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1rem;
+    }
+    .game-card {
+      grid-column: span 12;
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(83,226,155,.08), rgba(133,216,255,.06));
+      border-radius: 28px;
+      padding: 1rem;
+      box-shadow: 0 24px 70px rgba(0,0,0,.24);
+    }
+    @media (min-width: 992px) {
+      .game-card.half { grid-column: span 6; }
+    }
+    .level-orb {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 35%), linear-gradient(135deg, var(--cyan), #90f0c0);
+      color: #04111b;
+      font-weight: 900;
+      box-shadow: 0 0 28px rgba(70,215,255,.18);
+    }
+    .xp-track {
+      height: 10px;
+      background: rgba(255,255,255,.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .xp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      border-radius: inherit;
+      transition: width .35s ease;
+    }
+    .badge-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .4rem .7rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--line);
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+    .quest-item {
+      padding: .8rem .85rem;
+      border-radius: 20px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .quest-bar {
+      height: 8px;
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .quest-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+      border-radius: inherit;
+      transition: width .35s ease;
+    }
+    .shop-card {
+      padding: .85rem;
+      border-radius: 20px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .shop-card.owned {
+      border-color: rgba(83,226,155,.35);
+    }
+    .shop-price {
+      font-weight: 800;
+      color: var(--yellow);
+    }
+    .coin-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .4rem .75rem;
+      border-radius: 999px;
+      background: rgba(255,203,107,.12);
+      border: 1px solid rgba(255,203,107,.24);
+      color: var(--yellow);
+      font-weight: 800;
+    }
+    #reward-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 2000;
+    }
+    .reward-particle {
+      position: absolute;
+      width: 10px;
+      height: 18px;
+      border-radius: 4px;
+      opacity: 0;
+      animation: burst .9s ease-out forwards;
+    }
+    @keyframes burst {
+      0% { transform: translateY(0) scale(.9) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-220px) translateX(var(--x)) rotate(320deg); opacity: 0; }
+    }
+    .level-up-body {
+      background: radial-gradient(circle at top, rgba(83,226,155,.18), rgba(133,216,255,.08));
+    }
+    .level-up-orb {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, var(--cyan), #90f0c0);
+      color: #07131f;
+      font-weight: 900;
+      font-size: 2rem;
+      box-shadow: 0 0 32px rgba(83,226,155,.25);
+      animation: orbPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes orbPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 992px) {
+      .insight-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .dashboard-tabs { border-radius: 20px; }
+      .dashboard-tabs .tab-btn { flex: 1 1 calc(50% - .3rem); }
+      .hero .display-6 { font-size: clamp(2rem, 7vw, 3rem); }
+      .game-grid { gap: .8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4 shell">
+    <div class="hero p-4 p-md-5 mb-4">
+      <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-end">
+        <div>
+          <div class="topbar mb-2"><i class="bi bi-stars"></i> creative growth dashboard</div>
+          <h1 class="display-6 fw-bold mb-2">TODO Nebula Forest</h1>
+          <p class="mb-3 text-secondary">할 일을 심고, 나무와 보상으로 자라나는 창의적인 일정관리 화면입니다.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="badge-chip"><i class="bi bi-leaf"></i> 오늘의 리듬</span>
+            <span class="badge-chip"><i class="bi bi-graph-up-arrow"></i> 성장형 진행</span>
+            <span class="badge-chip"><i class="bi bi-gem"></i> 보상 중심</span>
+          </div>
+        </div>
+        <div class="text-md-end text-secondary">
+          <div><i class="bi bi-calendar3"></i> <span id="today"></span></div>
+          <div><i class="bi bi-lightning-charge"></i> live update</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-tabs mb-4">
+      <button class="btn btn-soft active tab-btn" data-view-tab="today" type="button"><i class="bi bi-sunrise"></i> 오늘</button>
+      <button class="btn btn-soft tab-btn" data-view-tab="growth" type="button"><i class="bi bi-tree"></i> 성장</button>
+      <button class="btn btn-soft tab-btn" data-view-tab="insight" type="button"><i class="bi bi-compass"></i> 인사이트</button>
+      <button class="btn btn-soft tab-btn" data-view-tab="board" type="button"><i class="bi bi-grid-1x2"></i> 보드</button>
+    </div>
+
+    <section class="view-frame active" data-view-panel="today">
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3"><div class="metric glass"><div class="text-secondary">전체</div><div class="value" id="stat-total">0</div></div></div>
+      <div class="col-6 col-lg-3"><div class="metric glass"><div class="text-secondary">완료</div><div class="value" id="stat-completed">0</div></div></div>
+      <div class="col-6 col-lg-3"><div class="metric glass"><div class="text-secondary">대기</div><div class="value" id="stat-pending">0</div></div></div>
+      <div class="col-6 col-lg-3"><div class="metric glass"><div class="text-secondary">진행률</div><div class="value" id="stat-progress">0%</div></div></div>
+    </div>
+
+    <div class="glass p-3 p-md-4 mb-4">
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-secondary">진행률</span>
+        <span id="progress-label">0%</span>
+      </div>
+      <div class="progress rounded-pill">
+        <div id="progress-bar" class="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <button class="btn btn-soft active" data-filter="all">전체</button>
+        <button class="btn btn-soft" data-filter="pending">대기</button>
+        <button class="btn btn-soft" data-filter="completed">완료</button>
+      </div>
+      <div class="mt-2 d-flex flex-wrap gap-2">
+        <button class="btn btn-soft active" data-due-filter="all">마감일 전체</button>
+        <button class="btn btn-soft" data-due-filter="overdue">지연</button>
+        <button class="btn btn-soft" data-due-filter="upcoming">임박</button>
+        <button class="btn btn-soft" data-due-filter="future">예정</button>
+      </div>
+    </div>
+    </section>
+
+    <section class="view-frame" data-view-panel="growth">
+    <div class="game-grid mb-4">
+      <div class="game-card half">
+        <div class="d-flex justify-content-between align-items-center gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="level-orb"><span id="level-value">1</span></div>
+            <div>
+              <div class="text-secondary small">PLAYER LEVEL</div>
+              <div class="fw-bold fs-5">Nebula Runner</div>
+              <div class="text-secondary small">XP <span id="xp-value">0</span> / <span id="xp-target">200</span></div>
+              <div class="coin-pill mt-2"><i class="bi bi-coin"></i> <span id="coin-value">0</span></div>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="text-secondary small">연속 플레이</div>
+            <div class="fw-bold fs-4"><span id="streak-value">0</span>일</div>
+          </div>
+        </div>
+        <div class="mt-3 xp-track"><div id="xp-fill" class="xp-fill" style="width:0%"></div></div>
+      </div>
+      <div class="game-card half">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="text-secondary small">TREE STATUS</div>
+            <div class="fw-bold">전체 일정 나무</div>
+          </div>
+          <div id="tree-state-chip" class="tree-chip info"><span>🌱</span><span>준비 중</span></div>
+        </div>
+        <div class="tree-scene">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2 position-relative" style="z-index:1;">
+            <div class="d-flex flex-column gap-2">
+              <span id="tree-stage-chip" class="tree-chip info"><span>레벨 1</span></span>
+              <span id="tree-schedule-chip" class="tree-chip"><span>0%</span><span>전체 일정</span></span>
+            </div>
+            <div class="text-end small text-secondary">
+              <div>무료 물주기 <span id="tree-free-water">0</span>/3</div>
+              <div>오늘 물주기 <span id="tree-waterings">0</span>회</div>
+            </div>
+          </div>
+          <div id="tree-avatar" class="tree-avatar">🌱</div>
+          <div id="tree-grave" class="tree-grave d-none">🪦</div>
+          <div id="tree-message" class="tree-message mt-2">전체 일정 현황을 기다리는 중이에요.</div>
+        </div>
+        <div class="tree-stat-grid mt-3">
+          <div class="tree-stat">HP <span id="tree-hp">100</span> / 100</div>
+          <div class="tree-stat">성장률 <span id="tree-growth">0</span>%</div>
+          <div class="tree-stat">상태 <span id="tree-health">건강함</span></div>
+          <div class="tree-stat">수확 <span id="tree-harvest">불가</span></div>
+        </div>
+        <div class="tree-action-bar mt-3">
+          <button class="btn btn-sm btn-neon" data-tree-action="water"><i class="bi bi-droplet"></i> 물주기</button>
+          <button class="btn btn-sm btn-soft" data-tree-action="medicine"><i class="bi bi-capsule"></i> 약</button>
+          <button class="btn btn-sm btn-soft" data-tree-action="sap"><i class="bi bi-eyedropper"></i> 수액</button>
+          <button class="btn btn-sm btn-soft" data-tree-action="harvest"><i class="bi bi-scissors"></i> 수확</button>
+          <button class="btn btn-sm btn-soft" data-tree-action="lightning"><i class="bi bi-lightning-charge"></i> 번개</button>
+          <button class="btn btn-sm btn-soft" data-tree-action="flood"><i class="bi bi-water"></i> 홍수</button>
+          <button class="btn btn-sm btn-soft d-none" data-tree-action="discard"><i class="bi bi-trash3"></i> 버리기</button>
+        </div>
+        <div class="small text-secondary mt-2" id="tree-last-event"></div>
+      </div>
+      <div class="game-card half">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="text-secondary small">TODAY QUESTS</div>
+            <div class="fw-bold">일일 퀘스트</div>
+          </div>
+          <div class="text-secondary small">보상 획득 가능</div>
+        </div>
+        <div id="quest-list" class="d-grid gap-2"></div>
+      </div>
+      <div class="game-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="text-secondary small">ACHIEVEMENTS</div>
+            <div class="fw-bold">업적</div>
+          </div>
+          <div class="text-secondary small"><span id="badge-count">0</span> unlocked</div>
+        </div>
+        <div id="badge-list" class="d-flex flex-wrap gap-2"></div>
+      </div>
+      <div class="game-card half">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="text-secondary small">SHOP</div>
+            <div class="fw-bold">상점</div>
+          </div>
+          <div class="text-secondary small">코인으로 구매</div>
+        </div>
+        <div id="shop-list" class="d-grid gap-2"></div>
+      </div>
+    </div>
+    </section>
+
+    <section class="view-frame" data-view-panel="insight">
+      <div class="insight-grid mb-4">
+        <div class="insight-card glass">
+          <div class="text-secondary small mb-2">오늘 요약</div>
+          <div class="kpi" id="insight-progress">0%</div>
+          <div class="text-secondary">완료 진행률</div>
+        </div>
+        <div class="insight-card glass">
+          <div class="text-secondary small mb-2">연속 플레이</div>
+          <div class="kpi"><span id="insight-streak">0</span>일</div>
+          <div class="text-secondary">꾸준함이 성장합니다</div>
+        </div>
+        <div class="insight-card glass">
+          <div class="text-secondary small mb-2">레벨</div>
+          <div class="kpi" id="insight-level">1</div>
+          <div class="text-secondary">네뷸라 러너</div>
+        </div>
+        <div class="insight-card glass">
+          <div class="text-secondary small mb-2">나무 상태</div>
+          <div class="kpi" id="insight-tree">🌱</div>
+          <div class="text-secondary" id="insight-health">준비 중</div>
+        </div>
+      </div>
+      <div class="glass p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+          <div>
+            <div class="text-secondary small">FOCUS WINDOW</div>
+            <div class="fw-bold fs-4">지금 가장 잘 자라는 구간</div>
+          </div>
+          <div class="coin-pill"><i class="bi bi-coin"></i> XP <span id="insight-xp">0</span></div>
+        </div>
+        <div class="mt-3 text-secondary">오늘 미션 <span id="insight-mission">0/0</span></div>
+        <div class="progress rounded-pill mt-2">
+          <div id="insight-mission-fill" class="progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-frame" data-view-panel="board">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="glass p-4 sticky-top" style="top: 1rem;">
+          <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle"></i> 할일 추가</h5>
+          <form id="add-form">
+            <div class="mb-3">
+              <label class="form-label text-secondary">내용</label>
+              <input name="title" class="form-control" placeholder="예: 보고서 작성" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-secondary">우선순위</label>
+              <select name="priority" class="form-select">
+                <option value="high">높음</option>
+                <option value="medium" selected>보통</option>
+                <option value="low">낮음</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-secondary">마감일</label>
+              <input name="due_date" type="datetime-local" class="form-control" required>
+            </div>
+            <button class="btn btn-neon w-100 py-2" type="submit">
+              <i class="bi bi-send"></i> 추가하기
+            </button>
+          </form>
+          <div id="toast" class="alert mt-3 d-none" role="alert"></div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="glass p-3 p-md-4 mb-3 d-flex flex-column flex-md-row gap-2 justify-content-between align-items-md-center">
+          <div>
+            <h5 class="fw-bold mb-1">할일 목록</h5>
+            <div class="text-secondary" id="list-hint">불러오는 중...</div>
+          </div>
+          <div class="text-secondary small" id="overdue-box"></div>
+        </div>
+
+        <div id="todo-list" class="d-grid gap-3"></div>
+      </div>
+    </div>
+    </section>
+  </div>
+
+  <script>
+    const state = { todos: [], filter: 'all', dueFilter: 'all', game: { xp: 0, coins: 0, level: 1, level_current: 0, level_target: 200, level_progress: 0, streak: 0, badges: [], quests: [], daily_mission: { title: '', current: 0, target: 0, reward: 0, can_claim: false }, shop: [], tree: {} } };
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const dueOrder = { overdue: 0, upcoming: 1, future: 2, none: 3 };
+
+    const el = (id) => document.getElementById(id);
+
+    function fmtToday() {
+      el('today').textContent = new Date().toLocaleDateString('ko-KR', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+      });
+    }
+
+    function showToast(message, kind = 'success') {
+      const toast = el('toast');
+      toast.className = `alert alert-${kind} mt-3`;
+      toast.textContent = message;
+      toast.classList.remove('d-none');
+      setTimeout(() => toast.classList.add('d-none'), 2200);
+    }
+
+    function spawnRewardBurst() {
+      const layer = document.getElementById('reward-layer');
+      if (!layer) return;
+      const colors = ['#46d7ff', '#8f6bff', '#30d18a', '#ffbf47', '#ff6b7a'];
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('span');
+        p.className = 'reward-particle';
+        p.style.left = `${20 + Math.random() * 60}%`;
+        p.style.top = `${70 + Math.random() * 12}%`;
+        p.style.setProperty('--x', `${(Math.random() - 0.5) * 220}px`);
+        p.style.background = colors[i % colors.length];
+        p.style.animationDelay = `${Math.random() * 0.08}s`;
+        layer.appendChild(p);
+        setTimeout(() => p.remove(), 1100);
+      }
+    }
+
+    function openLevelModal(level, rewardText) {
+      const modalEl = document.getElementById('level-up-modal');
+      if (!window.bootstrap || !bootstrap.Modal) {
+        showToast(`LEVEL UP! Lv.${level} ${rewardText}`, 'success');
+        spawnRewardBurst();
+        return;
+      }
+      modalEl.querySelector('[data-level]').textContent = level;
+      modalEl.querySelector('[data-reward]').textContent = rewardText;
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+      spawnRewardBurst();
+    }
+
+    function parseDue(todo) {
+      if (!todo.due_date) return null;
+      const value = todo.due_date.includes('T') ? todo.due_date : `${todo.due_date}T23:59`;
+      const due = new Date(value);
+      return Number.isNaN(due.getTime()) ? null : due;
+    }
+
+    function parseCreated(todo) {
+      if (!todo.created_at) return null;
+      const value = todo.created_at.includes('T') ? todo.created_at : todo.created_at.replace(' ', 'T');
+      const created = new Date(value);
+      return Number.isNaN(created.getTime()) ? null : created;
+    }
+
+    function dueMeta(todo) {
+      if (todo.due_meta) return todo.due_meta;
+      const due = parseDue(todo);
+      if (!due) return { exact: '없음', status: '마감일 없음', tone: 'muted', kind: 'none' };
+      const now = new Date();
+      const diff = due - now;
+      const exact = due.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      if (diff < 0) {
+        const minutes = Math.max(0, Math.floor(Math.abs(diff) / 60000));
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return { exact, status: `${hours ? `${hours}시간 ` : ''}${mins}분 지남`.trim(), tone: 'danger', kind: 'overdue' };
+      }
+      if (diff <= 7 * 86400000) return { exact, status: '임박', tone: 'warning', kind: 'upcoming' };
+      return { exact, status: '예정', tone: 'info', kind: 'future' };
+    }
+
+    function treeMeta(todo) {
+      if (todo.tree_meta) return todo.tree_meta;
+      if (todo.tree_sold) return { emoji: '🪙', label: '판매 완료', tone: 'secondary', can_sell: false, can_decorate: false };
+      if (todo.completed) return { emoji: '🌳', label: '성장 완료', tone: 'success', can_sell: true, can_decorate: true };
+      const due = parseDue(todo);
+      if (due && due < new Date()) return { emoji: '🥀', label: '시든 나무', tone: 'danger', can_sell: false, can_decorate: false };
+      if (due && due - new Date() <= 7 * 86400000) return { emoji: '🌱', label: '자라는 나무', tone: 'warning', can_sell: false, can_decorate: true };
+      return { emoji: '🌿', label: '건강한 나무', tone: 'info', can_sell: false, can_decorate: true };
+    }
+
+    function treeEmoji(tree) {
+      if (!tree) return '🌱';
+      if (tree.dead) {
+        if (tree.death_reason === '번개') return '🔥';
+        if (tree.death_reason === '홍수') return '🌊';
+        return '🥀';
+      }
+      if ((tree.growth || 0) >= 100) return '🌳';
+      if ((tree.growth || 0) >= 60) return '🌲';
+      if ((tree.growth || 0) >= 30) return '🌿';
+      return '🌱';
+    }
+
+    function treeTone(tree) {
+      if (!tree) return 'info';
+      if (tree.dead) return 'danger';
+      if ((tree.growth || 0) >= 100) return 'success';
+      if ((tree.growth || 0) >= 60) return 'info';
+      if ((tree.hp || 100) <= 40) return 'warning';
+      return 'info';
+    }
+
+    function render() {
+      const { stats, todos } = buildViewData();
+      const game = state.game || {};
+      el('stat-total').textContent = stats.total;
+      el('stat-completed').textContent = stats.completed;
+      el('stat-pending').textContent = stats.pending;
+      el('stat-progress').textContent = `${stats.progress}%`;
+      el('progress-label').textContent = `${stats.progress}%`;
+      el('progress-bar').style.width = `${stats.progress}%`;
+      el('overdue-box').textContent = stats.overdue ? `마감 지난 할일 ${stats.overdue}개` : '';
+      const statusHint = state.filter === 'all' ? '모든 할일을 표시합니다.' : `${state.filter === 'completed' ? '완료' : '대기'} 항목만 표시합니다.`;
+      const dueHint = state.dueFilter === 'all' ? '마감일 전체를 표시합니다.' : state.dueFilter === 'overdue' ? '지연된 할일만 표시합니다.' : state.dueFilter === 'upcoming' ? '임박한 할일만 표시합니다.' : '예정된 할일만 표시합니다.';
+      el('list-hint').textContent = `${statusHint} ${dueHint}`;
+      el('level-value').textContent = game.level || 1;
+      el('xp-value').textContent = game.level_current || 0;
+      el('xp-target').textContent = game.level_target || 200;
+      el('xp-fill').style.width = `${game.level_progress || 0}%`;
+      el('streak-value').textContent = game.streak || 0;
+      el('coin-value').textContent = game.coins || 0;
+
+      const tree = game.tree || {};
+      const mission = game.daily_mission || {};
+      const treeToneValue = treeTone(tree);
+      el('insight-progress').textContent = `${stats.progress || 0}%`;
+      el('insight-streak').textContent = game.streak || 0;
+      el('insight-level').textContent = game.level || 1;
+      el('insight-tree').textContent = treeEmoji(tree);
+      el('insight-health').textContent = tree.dead ? '죽음' : (tree.health_label || '건강함');
+      el('insight-xp').textContent = game.xp || 0;
+      el('insight-mission').textContent = `${mission.current || 0}/${mission.target || 0}`;
+      el('insight-mission-fill').style.width = `${mission.target ? Math.min(100, Math.round(((mission.current || 0) / mission.target) * 100)) : 0}%`;
+
+      const treeStateChip = el('tree-state-chip');
+      const treeStageChip = el('tree-stage-chip');
+      const treeScheduleChip = el('tree-schedule-chip');
+      if (treeStateChip) {
+        treeStateChip.className = `tree-chip ${treeToneValue}`;
+        treeStateChip.innerHTML = `<span>${treeEmoji(tree)}</span><span>${escapeHtml(tree.dead ? '죽음' : tree.state_label || tree.health_label || '준비 중')}</span>`;
+      }
+      if (treeStageChip) {
+        treeStageChip.className = `tree-chip ${treeToneValue}`;
+        treeStageChip.innerHTML = `<span>${escapeHtml(tree.stage_label || '레벨 1')}</span>`;
+      }
+      if (treeScheduleChip) {
+        treeScheduleChip.innerHTML = `<span>${tree.schedule_progress || 0}%</span><span>전체 일정</span>`;
+      }
+      el('tree-avatar').textContent = treeEmoji(tree);
+      el('tree-avatar').classList.toggle('dead', Boolean(tree.dead));
+      el('tree-grave').classList.toggle('d-none', !tree.grave);
+      el('tree-message').textContent = tree.message || '전체 일정 현황을 기다리는 중이에요.';
+      el('tree-last-event').textContent = tree.last_event || '';
+      el('tree-hp').textContent = tree.hp ?? 100;
+      el('tree-growth').textContent = tree.growth ?? 0;
+      el('tree-health').textContent = tree.health_label || '건강함';
+      el('tree-harvest').textContent = tree.can_harvest ? '가능' : '불가';
+      el('tree-waterings').textContent = tree.waterings_today || 0;
+      el('tree-free-water').textContent = Math.max(0, 3 - (tree.free_water_used || 0));
+      const discardBtn = document.querySelector('[data-tree-action="discard"]');
+      if (discardBtn) discardBtn.classList.toggle('d-none', !tree.dead);
+
+      const questList = el('quest-list');
+      questList.innerHTML = '';
+      (game.quests || []).forEach(q => {
+        const done = Math.min(q.current, q.target);
+        const pct = Math.round((done / q.target) * 100);
+        const item = document.createElement('div');
+        item.className = 'quest-item';
+        item.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="fw-semibold">${escapeHtml(q.title)}</div>
+            <div class="small text-secondary">+${q.reward} XP</div>
+          </div>
+          <div class="d-flex justify-content-between small text-secondary mb-1">
+            <span>${done}/${q.target}</span>
+            <span>${pct}%</span>
+          </div>
+          <div class="quest-bar"><div class="quest-fill" style="width:${pct}%"></div></div>`;
+        questList.appendChild(item);
+      });
+
+      const daily = game.daily_mission || {};
+      const questExtra = document.createElement('div');
+      questExtra.className = 'quest-item';
+      questExtra.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-semibold">${escapeHtml(daily.title || '오늘의 미션')}</div>
+          <div class="small text-secondary">+${daily.reward || 0} 코인</div>
+        </div>
+        <div class="d-flex justify-content-between small text-secondary mb-1">
+          <span>${daily.current || 0}/${daily.target || 0}</span>
+          <span>${daily.can_claim ? '클레임 가능' : (daily.claimed ? '완료됨' : '진행중')}</span>
+        </div>
+        <div class="quest-bar"><div class="quest-fill" style="width:${daily.target ? Math.min(100, Math.round(((daily.current || 0) / daily.target) * 100)) : 0}%"></div></div>
+        <button class="btn btn-sm btn-neon w-100 mt-2" id="claim-daily-btn" ${daily.can_claim ? '' : 'disabled'}>${daily.claimed ? '이미 수령함' : '보상 받기'}</button>`;
+      questList.prepend(questExtra);
+      const claimBtn = document.getElementById('claim-daily-btn');
+      if (claimBtn && daily.can_claim) {
+        claimBtn.addEventListener('click', claimDailyMission);
+      }
+
+      const badgeList = el('badge-list');
+      const badges = game.badges || [];
+      el('badge-count').textContent = badges.length;
+      badgeList.innerHTML = badges.length ? '' : '<span class="text-secondary">아직 해금된 업적이 없습니다.</span>';
+      badges.forEach(b => {
+        const chip = document.createElement('div');
+        chip.className = `badge-chip text-${b.tone || 'secondary'}`;
+        chip.innerHTML = `<span>${b.icon || '🎮'}</span><span>${escapeHtml(b.name)}</span>`;
+        badgeList.appendChild(chip);
+      });
+
+      const shopList = el('shop-list');
+      const shop = game.shop || [];
+      shopList.innerHTML = '';
+      shop.forEach(item => {
+        const card = document.createElement('div');
+        const owned = Boolean(item.owned);
+        card.className = `shop-card ${owned ? 'owned' : ''}`;
+        card.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">${escapeHtml(item.name)}</div>
+              <div class="small text-secondary">${escapeHtml(item.label || item.desc)}</div>
+            </div>
+            <div class="shop-price"><i class="bi bi-coin"></i> ${item.price}</div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="small ${owned ? 'text-success' : 'text-secondary'}">${owned ? '보유중' : '구매 가능'}</span>
+            <button class="btn btn-sm btn-soft" ${owned ? 'disabled' : ''} data-buy="${item.id}">${owned ? '완료' : '구매'}</button>
+          </div>`;
+        const buyBtn = card.querySelector('[data-buy]');
+        if (!owned) buyBtn.addEventListener('click', () => buyShopItem(item.id));
+        shopList.appendChild(card);
+      });
+
+      const container = el('todo-list');
+      container.innerHTML = '';
+
+      if (!todos.length) {
+        container.innerHTML = `
+          <div class="glass empty">
+            <i class="bi bi-inbox display-1"></i>
+            <div class="mt-3 fs-5">할일이 없습니다</div>
+            <div class="text-secondary">왼쪽에서 새 할일을 추가해보세요.</div>
+          </div>`;
+        return;
+      }
+
+      todos.forEach(todo => {
+        const meta = dueMeta(todo);
+        const tree = treeMeta(todo);
+        const row = document.createElement('div');
+        row.className = `todo-row ${todo.completed ? 'completed' : ''}`;
+        const noteText = todo.note || '';
+        const lineCount = noteText ? noteText.split(/\r?\n/).length : 0;
+        const canDecorate = Boolean((state.game.shop || []).find(item => item.id === 'tree_lantern' && item.owned)) && tree.can_decorate && !todo.tree_sold;
+        row.innerHTML = `
+          <button class="btn btn-soft icon-btn" data-action="toggle" title="완료 토글">
+            <i class="bi ${todo.completed ? 'bi-check-circle-fill text-success' : 'bi-circle'}"></i>
+          </button>
+          <div>
+            <div class="todo-title ${todo.completed ? 'completed' : ''}"><strong>${escapeHtml(todo.title)}</strong></div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-2 small">
+              <span class="badge-priority p-${todo.priority}">${todo.priority === 'high' ? '높음' : todo.priority === 'low' ? '낮음' : '보통'}</span>
+              <span class="text-secondary"><i class="bi bi-clock"></i> ${todo.created_at}</span>
+              <span class="due-${meta.tone}"><i class="bi bi-calendar3"></i> ${meta.status}</span>
+              <span class="due-${meta.tone}"><i class="bi bi-clock-history"></i> ${meta.exact}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
+              <span class="tree-chip ${tree.tone}"><span>${tree.emoji}</span><span>${escapeHtml(tree.label)}</span></span>
+              ${todo.tree_decorations && todo.tree_decorations.length ? `<span class="due-chip due-info"><i class="bi bi-stars"></i> 장식 ${todo.tree_decorations.length}개</span>` : ''}
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              ${tree.can_sell ? `<button class="btn btn-sm btn-soft" data-action="sell-tree" type="button"><i class="bi bi-shop"></i> 나무 판매</button>` : ''}
+              ${canDecorate ? `<button class="btn btn-sm btn-soft" data-action="decorate-tree" type="button"><i class="bi bi-flower1"></i> 장식 적용</button>` : ''}
+            </div>
+            <div class="note-box mt-3">
+              <div class="note-head small text-secondary">
+                <span><i class="bi bi-journal-text"></i> 메모</span>
+                <span>${noteText ? '작성됨' : '비어있음'}</span>
+              </div>
+              <div class="note-view ${lineCount > 5 ? '' : 'expanded'} ${noteText ? '' : 'note-empty'}" data-note-view>${noteText ? escapeHtml(noteText) : '메모를 작성해보세요.'}</div>
+              <button class="note-toggle ${lineCount > 5 ? '' : 'd-none'}" data-action="toggle-note" type="button">
+                <i class="bi bi-chevron-down"></i> 더보기
+              </button>
+              <textarea class="form-control form-control-sm note-editor" data-note-input placeholder="이 할일에 대한 메모를 적어보세요...">${escapeHtml(noteText)}</textarea>
+              <div class="note-actions">
+                <button class="btn btn-sm btn-soft" data-action="edit-note" type="button" title="편집">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-soft d-none" data-action="save-note" type="button" title="저장">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-outline-danger icon-btn" data-action="delete" title="삭제">
+            <i class="bi bi-trash"></i>
+          </button>`;
+
+        const toggleBtn = row.querySelector('[data-action="toggle"]');
+        const deleteBtn = row.querySelector('[data-action="delete"]');
+        const editNoteBtn = row.querySelector('[data-action="edit-note"]');
+        const saveNoteBtn = row.querySelector('[data-action="save-note"]');
+        const noteInput = row.querySelector('[data-note-input]');
+        const noteView = row.querySelector('[data-note-view]');
+        const noteToggleBtn = row.querySelector('[data-action="toggle-note"]');
+        const sellBtn = row.querySelector('[data-action="sell-tree"]');
+        const decorateBtn = row.querySelector('[data-action="decorate-tree"]');
+        toggleBtn.addEventListener('click', () => toggleTodo(todo.id));
+        deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+        if (sellBtn) sellBtn.addEventListener('click', () => sellTree(todo.id));
+        if (decorateBtn) decorateBtn.addEventListener('click', () => decorateTree(todo.id, 'tree_lantern'));
+        editNoteBtn.addEventListener('click', () => {
+          const noteBox = row.querySelector('.note-box');
+          noteBox.classList.add('editing');
+          editNoteBtn.classList.add('d-none');
+          saveNoteBtn.classList.remove('d-none');
+          noteView.classList.remove('expanded');
+          if (noteToggleBtn) noteToggleBtn.classList.add('d-none');
+          noteInput.focus();
+        });
+        saveNoteBtn.addEventListener('click', () => saveNote(todo.id, noteInput.value));
+        if (noteToggleBtn) {
+          noteToggleBtn.addEventListener('click', () => {
+            const expanded = noteView.classList.toggle('expanded');
+            noteToggleBtn.innerHTML = expanded
+              ? '<i class="bi bi-chevron-up"></i> 접기'
+              : '<i class="bi bi-chevron-down"></i> 더보기';
+          });
+        }
+        if (lineCount > 5) {
+          noteView.classList.remove('expanded');
+          noteToggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> 더보기';
+        }
+        container.appendChild(row);
+      });
+
+      document.querySelectorAll('[data-tree-action]').forEach(btn => {
+        btn.onclick = () => treeAction(btn.dataset.treeAction);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function buildViewData() {
+      const todos = [...state.todos]
+        .sort((a, b) => {
+          const aCreated = parseCreated(a);
+          const bCreated = parseCreated(b);
+          return (bCreated ? bCreated.getTime() : 0) - (aCreated ? aCreated.getTime() : 0)
+            || (b.id - a.id);
+        })
+        .filter(todo => {
+          const statusOk = state.filter === 'all' ? true : state.filter === 'completed' ? todo.completed : !todo.completed;
+          if (!statusOk) return false;
+          const kind = todo.due_meta?.kind || dueMeta(todo).kind;
+          return state.dueFilter === 'all' ? true : kind === state.dueFilter;
+        });
+
+      const total = state.todos.length;
+      const completed = state.todos.filter(t => t.completed).length;
+      const pending = total - completed;
+      const overdue = state.todos.filter(t => (t.due_meta?.kind || dueMeta(t).kind) === 'overdue' && !t.completed).length;
+
+      return {
+        todos,
+        stats: {
+          total,
+          completed,
+          pending,
+          overdue,
+          progress: total ? Math.round((completed / total) * 100) : 0,
+        }
+      };
+    }
+
+    async function loadTodos() {
+      const res = await fetch('/api/todos');
+      const data = await res.json();
+      state.todos = data.todos;
+      state.game = data.game;
+      render();
+    }
+
+    async function addTodo(payload) {
+      const res = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '추가 실패');
+      showToast('할일이 추가되었습니다.', 'success');
+      await loadTodos();
+    }
+
+    async function toggleTodo(id) {
+      const res = await fetch(`/api/todos/${id}/toggle`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '처리 실패', 'danger');
+      if (data.completed) {
+        showToast(`퀘스트 완료! +${data.xp_gain || 0} XP, +${data.coin_gain || 0} 코인`, 'success');
+        if (data.leveled_up) {
+          openLevelModal(data.level, `+${data.xp_gain || 0} XP`);
+        } else {
+          spawnRewardBurst();
+        }
+      } else {
+        showToast('완료 취소', 'warning');
+      }
+      await loadTodos();
+    }
+
+    async function deleteTodo(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '삭제 실패', 'danger');
+      showToast('삭제되었습니다.', 'danger');
+      await loadTodos();
+    }
+
+    async function saveNote(id, note) {
+      const res = await fetch(`/api/todos/${id}/note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '메모 저장 실패', 'danger');
+      showToast('메모가 저장되었습니다.', 'success');
+      await loadTodos();
+    }
+
+    async function claimDailyMission() {
+      const res = await fetch('/api/game/daily-claim', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '보상 실패', 'danger');
+      showToast(`일일 미션 보상! +${data.reward} 코인`, 'success');
+      spawnRewardBurst();
+      await loadTodos();
+    }
+
+    async function buyShopItem(itemId) {
+      const res = await fetch('/api/shop/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '구매 실패', 'danger');
+      showToast('구매 완료!', 'success');
+      spawnRewardBurst();
+      await loadTodos();
+    }
+
+    async function treeAction(action) {
+      const res = await fetch('/api/tree/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '나무 행동 실패', 'danger');
+      state.game.coins = data.coins ?? state.game.coins;
+      state.game.tree = data.tree || state.game.tree;
+      const toastMap = {
+        water: '나무에 물을 줬어요.',
+        medicine: '약을 사용했어요.',
+        sap: '수액을 사용했어요.',
+        harvest: `나무를 수확했어요. +${data.reward || 0} 코인`,
+        lightning: data.tree && data.tree.dead ? '번개가 나무를 태웠어요.' : '번개가 빗나갔어요.',
+        flood: data.tree && data.tree.dead ? '홍수가 나무를 쓸어갔어요.' : '홍수가 지나갔어요.',
+        discard: '나무를 버리고 새로 시작했어요.',
+      };
+      showToast(toastMap[action] || '처리되었습니다.', action === 'harvest' || action === 'water' || action === 'medicine' || action === 'sap' || action === 'discard' ? 'success' : 'warning');
+      spawnRewardBurst();
+      render();
+    }
+
+    async function sellTree(id) {
+      const res = await fetch(`/api/todos/${id}/sell-tree`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '판매 실패', 'danger');
+      showToast(`나무 판매 완료! +${data.reward || 0} 코인`, 'success');
+      spawnRewardBurst();
+      await loadTodos();
+    }
+
+    async function decorateTree(id, itemId) {
+      const res = await fetch(`/api/todos/${id}/decorate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || '장식 적용 실패', 'danger');
+      showToast('나무 장식이 적용되었습니다.', 'success');
+      await loadTodos();
+    }
+
+    document.getElementById('add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formEl = e.currentTarget;
+      const form = new FormData(formEl);
+      try {
+        await addTodo({
+          title: form.get('title'),
+          priority: form.get('priority'),
+          due_date: form.get('due_date'),
+        });
+        formEl.reset();
+      } catch (err) {
+        showToast(err.message, 'danger');
+      }
+    });
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter]').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        state.filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-due-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-due-filter]').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        state.dueFilter = btn.dataset.dueFilter;
+        render();
+      });
+    });
+
+    const viewButtons = Array.from(document.querySelectorAll('[data-view-tab]'));
+    const viewPanels = Array.from(document.querySelectorAll('[data-view-panel]'));
+    function setDashboardView(name) {
+      viewButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.viewTab === name));
+      viewPanels.forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === name));
+      if (window.location.hash !== `#${name}`) window.location.hash = name;
+    }
+    viewButtons.forEach(btn => {
+      btn.addEventListener('click', () => setDashboardView(btn.dataset.viewTab));
+    });
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && viewPanels.some(panel => panel.dataset.viewPanel === hash)) setDashboardView(hash);
+    });
+
+    setDashboardView(window.location.hash.replace('#', '') || 'today');
+
+    fmtToday();
+    loadTodos();
+  </script>
+
+  <div id="reward-layer"></div>
+
+  <div class="modal fade" id="level-up-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content level-up-body text-light border-0">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">LEVEL UP!</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center pb-4">
+          <div class="level-up-orb"><span data-level>1</span></div>
+          <div class="fw-bold fs-4 mb-2">레벨이 올랐습니다</div>
+          <div class="text-secondary" data-reward>보상</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
