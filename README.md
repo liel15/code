@@ -13,6 +13,39 @@
 - `openSpec/`: 변경 제안 및 구현 문서
 - `maratang-memo-ritual-site/`: 별도 실험용 웹
 
+## 프로젝트별 안내
+
+### 일정관리 + 나무 키우기
+
+- 진입점: `todo_web.py`
+- 템플릿: `templates/todo_web.html`
+- 테스트: `test_todo_web.py`
+- 실행: `python todo_web.py`
+
+주요 기능:
+- 일정 추가/완료/삭제
+- 마감일 기반 HP/성장률 반영
+- 나무 수확/치료/장식/상점
+- 오늘/성장/인사이트/보드 탭 전환
+
+### 영수증 OCR 앱
+
+- 진입점: `claude_ocr_1day/backend/main.py`
+- 프론트: `claude_ocr_1day/frontend/`
+- 실행: `uvicorn main:app --reload --host 127.0.0.1 --port 5000`
+
+주요 기능:
+- 영수증 업로드
+- OCR 파싱
+- 지출 내역/통계 조회
+- OpenSpec 기반 디자인 실험
+
+### OpenSpec
+
+- 위치: `openSpec/`
+- 변경 예시: `openSpec/changes/creative-web-design-improvement/`
+- 문서: proposal, design, specs, tasks
+
 ## 실행 방법
 
 ### 일정관리 웹
@@ -59,3 +92,11 @@ openspec status --change "creative-web-design-improvement"
 
 - 저장소는 여러 실험을 함께 담고 있으니, 작업 전 `git status`를 확인하는 것이 좋습니다.
 - 실행 중 생성되는 데이터는 필요 시 백업 후 삭제해도 됩니다.
+
+## 추천 작업 순서
+
+1. `README.md` 또는 `CONTRIBUTING.md` 확인
+2. `git status`로 변경점 확인
+3. 해당 앱 실행
+4. 테스트 또는 수동 검증
+5. 커밋 및 푸시
